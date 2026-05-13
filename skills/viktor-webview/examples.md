@@ -89,6 +89,10 @@ class Controller(vkt.Controller):
         return vkt.WebResult(html=page)
 ```
 
+## MathJax Equation Reports
+
+Load `../viktor-webview-mathjax/SKILL.md` when a WebView HTML template renders calculation equations with MathJax, especially in sandboxed VIKTOR WebView output.
+
 ## 3. Send A Button Selection Back To VIKTOR
 
 Use the JavaScript SDK when a user action in the WebView should fill parametrization fields.
@@ -432,4 +436,3 @@ class TestController(unittest.TestCase):
         self.assertIn('/sdk/v1.js', result.html)
         self.assertIn("viktorSdk.sendParams", result.html)
 ```
-

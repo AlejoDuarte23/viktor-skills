@@ -30,6 +30,7 @@ Use this skill as the entry point for VIKTOR app work.
 - `../viktor-reporting-pandoc/SKILL.md`: Word DOCX reports generated from Markdown with Pandoc and exposed through `DownloadButton`.
 - `../viktor-llm/SKILL.md`: VIKTOR built-in LLM, tool use, vision, and LLM chat inputs.
 - `../viktor-webview/SKILL.md`: custom HTML, CSS, JavaScript, interactive dashboards, and browser-to-VIKTOR parameter updates.
+- `../viktor-webview-mathjax/SKILL.md`: MathJax equation rendering inside sandboxed VIKTOR WebView HTML templates.
 
 ## References
 

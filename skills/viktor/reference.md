@@ -26,5 +26,6 @@ Then add specialized skills only when the task needs them.
 | Configure, install, or run a VIKTOR app locally | `viktor-cli-config` |
 | Add built-in VIKTOR LLM features | `viktor-llm` |
 | Build custom interactive HTML output | `viktor-webview` |
+| Render LaTeX equations in WebView HTML | `viktor-webview`, `viktor-webview-mathjax` |
 
 Do not load every specialized skill by default. The core trio is enough for most application structure work.
