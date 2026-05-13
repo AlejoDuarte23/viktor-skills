@@ -23,6 +23,7 @@ Use this skill as the entry point for VIKTOR app work.
 - `../viktor-aec-data-model/SKILL.md`: Autodesk ACC file selection and AEC Data Model GraphQL queries.
 - `../viktor-staad-pro-worker/SKILL.md`: STAAD.Pro automation through a VIKTOR worker and `PythonAnalysis`.
 - `../viktor-etabs-worker/SKILL.md`: ETABS automation through a VIKTOR worker and `ETABSAnalysis`.
+- `../viktor-sap2000-worker/SKILL.md`: SAP2000 automation through a VIKTOR worker, `SAP2000Analysis`, and CSI OAPI with `comtypes`.
 - `../viktor-rest-api/SKILL.md`: VIKTOR REST API calls for platform-level resources such as workspaces.
 - `../viktor-sdk-api/SKILL.md`: VIKTOR Python SDK API for entity data and running entity computations.
 - `../viktor-cli-config/SKILL.md`: VIKTOR CLI commands, app types, `viktor.config.toml`, Python packages, and system dependencies.
