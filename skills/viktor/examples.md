@@ -80,6 +80,19 @@ Load:
 - `viktor-cli-config`
 - `viktor-core` if the change affects app structure
 
+## Word Report Download
+
+Request: "Add a button that generates a Word report from Markdown."
+
+Load:
+
+- `viktor-core`
+- `viktor-parametrization`
+- `viktor-styling`
+- `viktor-file-management`
+- `viktor-cli-config`
+- `viktor-reporting-pandoc`
+
 ## Built-In LLM App
 
 Request: "Add VIKTOR's built-in LLM with tool use and image input."
@@ -101,3 +114,15 @@ Load:
 - `viktor-parametrization`
 - `viktor-styling`
 - `viktor-webview`
+
+## WebView Equation Report
+
+Request: "Render a calculation report with MathJax equations in a VIKTOR WebView."
+
+Load:
+
+- `viktor-core`
+- `viktor-parametrization`
+- `viktor-styling`
+- `viktor-webview`
+- `viktor-webview-mathjax`

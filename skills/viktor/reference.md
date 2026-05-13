@@ -17,6 +17,7 @@ Then add specialized skills only when the task needs them.
 | Return tables or key result cards | `viktor-table-data-view` |
 | Read an uploaded Excel file | `viktor-upload-excel` |
 | Upload or download general files | `viktor-file-management` |
+| Generate downloadable Word reports from Markdown | `viktor-reporting-pandoc`, `viktor-file-management`, `viktor-cli-config` |
 | Query Autodesk ACC model data | `viktor-aec-data-model` |
 | Run STAAD.Pro outside the VIKTOR cloud runtime | `viktor-staad-pro-worker` |
 | Run ETABS outside the VIKTOR cloud runtime | `viktor-etabs-worker` |
@@ -25,5 +26,6 @@ Then add specialized skills only when the task needs them.
 | Configure, install, or run a VIKTOR app locally | `viktor-cli-config` |
 | Add built-in VIKTOR LLM features | `viktor-llm` |
 | Build custom interactive HTML output | `viktor-webview` |
+| Render LaTeX equations in WebView HTML | `viktor-webview`, `viktor-webview-mathjax` |
 
 Do not load every specialized skill by default. The core trio is enough for most application structure work.

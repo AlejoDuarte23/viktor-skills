@@ -216,6 +216,8 @@ This mirrors the public VIKTOR WebView examples repository, where table/canvas s
 
 ## JavaScript Libraries And Assets
 
+For MathJax equation-heavy calculation reports, load `../viktor-webview-mathjax/SKILL.md`. VIKTOR WebView HTML should be treated as an isolated/sandboxed page, so MathJax configuration and script loading need to live inside the HTML template itself.
+
 ### CDN Libraries
 
 Use a CDN only when the target VIKTOR environment can access it and the dependency is acceptable for the project.

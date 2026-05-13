@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ report_title }}</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]'], ['$$', '$$']],
+        processEscapes: true
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      },
+      startup: {
+        pageReady: () => MathJax.startup.defaultPageReady().then(() => {
+          document.documentElement.classList.add('mathjax-ready');
+        })
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px 40px 48px;
+      background: #ffffff;
+      color: #111111;
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .report {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    .report-header {
+      margin-bottom: 28px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #cfcfcf;
+    }
+    .report-title {
+      margin: 0 0 4px;
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .report-subtitle {
+      margin: 0;
+      font-size: 14px;
+      color: #444444;
+    }
+    .sheet {
+      margin-bottom: 34px;
+      padding-top: 16px;
+      border-top: 1px solid #d9d9d9;
+    }
+    .sheet-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px 28px;
+    }
+    .block-title {
+      margin: 0 0 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .calc-line {
+      max-width: 100%;
+      padding: 2px 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      overflow-wrap: anywhere;
+    }
+    mjx-container {
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+    .calc-line .MathJax {
+      font-size: 1.02em !important;
+    }
+    @media (max-width: 820px) {
+      body {
+        padding: 22px 18px 32px;
+      }
+      .sheet-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="report">
+    <header class="report-header">
+      <h1 class="report-title">{{ report_title }}</h1>
+      <p class="report-subtitle">{{ report_subtitle }}</p>
+    </header>
+
+    {% for item in report_items %}
+    <section class="sheet">
+      <h2>{{ item.title }}</h2>
+      <p>{{ item.subtitle }}</p>
+      <div class="sheet-grid">
+        {% for block in item.blocks %}
+        <div>
+          <h3 class="block-title">{{ block.title }}</h3>
+          {% for line in block.lines %}
+          <div class="calc-line">\( {{ line }} \)</div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </main>
+</body>
+</html>
