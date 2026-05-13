@@ -28,7 +28,7 @@ viktor==14.27.3
 Install worker-side dependencies into the Python executable selected during worker installation:
 
 ```powershell
-C:\Path\To\python.exe -m pip install pywin32 comtypes
+C:\Path\To\python.exe -m pip install comtypes
 ```
 
 ## Controller With Geometry Preview and ETABS Worker Call
@@ -171,8 +171,8 @@ import json
 import traceback
 from pathlib import Path
 
+import comtypes
 import comtypes.client
-import pythoncom
 
 
 PROGRAM_PATH = r"C:\Program Files\Computers and Structures\ETABS 22\ETABS.exe"
@@ -197,7 +197,6 @@ def read_inputs():
 
 def start_etabs(program_path):
     helper = comtypes.client.CreateObject("ETABSv1.Helper")
-    helper = helper.QueryInterface(comtypes.gen.ETABSv1.cHelper)
     engine = helper.CreateObject(program_path)
     engine.ApplicationStart()
 
@@ -286,7 +285,7 @@ def write_output(data):
 
 def main():
     engine = None
-    pythoncom.CoInitialize()
+    comtypes.CoInitialize()
     try:
         payload = read_inputs()
         engine, model = start_etabs(PROGRAM_PATH)
@@ -316,7 +315,7 @@ def main():
                 engine.ApplicationExit(False)
             except Exception:
                 pass
-        pythoncom.CoUninitialize()
+        comtypes.CoUninitialize()
 
 
 if __name__ == "__main__":
