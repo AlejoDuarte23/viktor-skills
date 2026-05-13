@@ -114,3 +114,15 @@ Load:
 - `viktor-parametrization`
 - `viktor-styling`
 - `viktor-webview`
+
+## WebView Equation Report
+
+Request: "Render a calculation report with MathJax equations in a VIKTOR WebView."
+
+Load:
+
+- `viktor-core`
+- `viktor-parametrization`
+- `viktor-styling`
+- `viktor-webview`
+- `viktor-webview-mathjax`
