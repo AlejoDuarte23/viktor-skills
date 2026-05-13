@@ -80,6 +80,16 @@ Load:
 - `viktor-cli-config`
 - `viktor-core` if the change affects app structure
 
+## Automated Tests And Mocks
+
+Request: "Add tests for the VIKTOR views and mock the external worker calls."
+
+Load:
+
+- `viktor-core`
+- `viktor-cli-config`
+- `viktor-testing`
+
 ## Word Report Download
 
 Request: "Add a button that generates a Word report from Markdown."
