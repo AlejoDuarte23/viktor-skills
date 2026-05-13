@@ -12,8 +12,10 @@ Use this skill as the entry point for VIKTOR app work.
 1. Load `../viktor-core/SKILL.md` first to get the app structure, controller pattern, views, and error handling right.
 2. Load `../viktor-parametrization/SKILL.md` second before creating or changing user inputs.
 3. Load `../viktor-styling/SKILL.md` third before writing app titles, descriptions, equations, or input guidance.
-4. Load only the specialized skills that match the requested feature.
-5. Build or review the app against VIKTOR conventions, not generic Python web app conventions.
+4. Load `../viktor-cli-config/SKILL.md` before creating, installing, starting, testing, or publishing an app.
+5. For a new manually created app, use the first-run CLI sequence: create the platform app with `viktor-cli create-app "<App Name>" --registered-name <registered-name>`, confirm `registered_name = "<registered-name>"` in `viktor.config.toml`, run `viktor-cli clean-start`, then give the user the URL printed by the CLI so they can open the app in the browser.
+6. Load only the specialized skills that match the requested feature.
+7. Build or review the app against VIKTOR conventions, not generic Python web app conventions.
 
 ## Specialized Skills
 

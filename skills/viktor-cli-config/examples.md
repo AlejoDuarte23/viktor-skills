@@ -58,6 +58,8 @@ viktor-cli create-app "Bearing Pressure Check" --registered-name bearing-pressur
 viktor-cli clean-start
 ```
 
+After `clean-start` succeeds, report the URL printed by the CLI so the user can open the app in the browser. Do not run `viktor-cli start` before the platform app exists; if the CLI says `app with registered-name=<name> does not exist`, run `create-app` with that registered name first.
+
 ## Minimal `viktor.config.toml`
 
 ```toml
