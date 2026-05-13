@@ -143,7 +143,7 @@ Common examples from the VIKTOR docs:
 
 ## CLI Setup
 
-The VIKTOR CLI is used to install dependencies, start apps, run commands, run tests, and publish.
+The VIKTOR CLI is used to create apps, install dependencies, start apps, run commands, run tests, and publish.
 
 Initial setup:
 
@@ -160,6 +160,62 @@ The CLI writes its account configuration to a `.viktor` folder in the user's hom
 
 For WSL2 on Windows, use the Linux version of the CLI.
 
+## Creating A New App
+
+Use `create-app` when the VIKTOR platform app does not exist yet. The command creates a new app on the platform. With `--init`, it also generates an initial local app structure.
+
+```bash
+viktor-cli create-app "My App Name" --init --registered-name my-app-name --app-type simple
+```
+
+Command notes:
+
+- `<NAME>` is the human-readable app name shown on the platform.
+- `--registered-name` sets the URL-friendly registered app name. If omitted, VIKTOR generates one.
+- `--app-type` is only used with `--init` and supports `editor`, `simple`, and `tree`.
+- After creating the app, set or confirm the same value in `viktor.config.toml`:
+
+```toml
+registered_name = "my-app-name"
+```
+
+The registered name in the config should match the platform app used for `start` and `publish`. If a command passes `--registered-name`, that explicit value should normally be identical to the config value.
+
+### Manual From-Scratch Sequence
+
+If creating the application manually instead of using `--init`, create the local app files first:
+
+```text
+my-app
+├── app.py
+├── requirements.txt
+└── viktor.config.toml
+```
+
+Set the registered name in the config:
+
+```toml
+app_type = "simple"
+registered_name = "my-app-name"
+python_version = "3.12"
+```
+
+Then create the platform app with the same registered name and install:
+
+```bash
+viktor-cli create-app "My App Name" --registered-name my-app-name
+viktor-cli install
+viktor-cli start
+```
+
+For a first clean launch, use:
+
+```bash
+viktor-cli clean-start
+```
+
+Use `create-app --init` when you want the CLI to generate starter files. Use `create-app` without `--init` when you already created the local app files.
+
 ## Health Checks
 
 Use:
@@ -175,6 +231,7 @@ Default checks cover PyPI access, VIKTOR domain access, 64-bit Python configurat
 
 ```bash
 viktor-cli apps
+viktor-cli create-app "My App Name" --init --registered-name my-app-name --app-type simple
 viktor-cli install
 viktor-cli clean-start
 viktor-cli start
@@ -186,8 +243,9 @@ viktor-cli publish --registered-name my-app
 
 Command notes:
 
+- `create-app`: creates a platform app; add `--init` to generate the initial local app files.
 - `install`: installs VIKTOR platform dependencies and app dependencies. Run it after changing `requirements.txt`.
-- `clean-start`: installs and starts the app in a clean development workspace.
+- `clean-start`: installs and starts the app in a clean development workspace. Use it for the first local launch after creating or cloning an app.
 - `start`: connects local code to the platform for browser-based development. Stop it with `CTRL+C`.
 - `run`: runs a command in the app container. Use `--` before the command when the command has flags.
 - `test`: runs unit tests with `python -m unittest discover -s tests`, or a dotted path passed with `--path`.
@@ -208,7 +266,14 @@ Docker-only flags include `--max-memory`, `--dns`, `--python`, and `--volume`.
 
 ## Publishing Notes
 
+Before publishing, confirm `registered_name` in `viktor.config.toml` matches the app on the platform. The publish command uses the config value when `--registered-name` is not provided, and the flag overrides the config when it is provided.
+
 The publish command performs checks and continues in the background once the spinner appears. After a successful CLI message, the browser may need a refresh before the latest app version appears.
+
+```bash
+viktor-cli publish
+viktor-cli publish --registered-name my-app-name
+```
 
 Use `.viktorignore` in the app root to exclude development-only files from publication.
 
