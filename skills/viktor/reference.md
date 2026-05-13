@@ -17,6 +17,7 @@ Then add specialized skills only when the task needs them.
 | Return tables or key result cards | `viktor-table-data-view` |
 | Read an uploaded Excel file | `viktor-upload-excel` |
 | Upload or download general files | `viktor-file-management` |
+| Generate downloadable Word reports from Markdown | `viktor-reporting-pandoc`, `viktor-file-management`, `viktor-cli-config` |
 | Query Autodesk ACC model data | `viktor-aec-data-model` |
 | Run STAAD.Pro outside the VIKTOR cloud runtime | `viktor-staad-pro-worker` |
 | Run ETABS outside the VIKTOR cloud runtime | `viktor-etabs-worker` |

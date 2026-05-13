@@ -27,6 +27,7 @@ Use this skill as the entry point for VIKTOR app work.
 - `../viktor-sdk-api/SKILL.md`: VIKTOR Python SDK API for entity data and running entity computations.
 - `../viktor-cli-config/SKILL.md`: VIKTOR CLI commands, app types, `viktor.config.toml`, Python packages, and system dependencies.
 - `../viktor-file-management/SKILL.md`: VIKTOR file upload and download patterns beyond Excel parsing.
+- `../viktor-reporting-pandoc/SKILL.md`: Word DOCX reports generated from Markdown with Pandoc and exposed through `DownloadButton`.
 - `../viktor-llm/SKILL.md`: VIKTOR built-in LLM, tool use, vision, and LLM chat inputs.
 - `../viktor-webview/SKILL.md`: custom HTML, CSS, JavaScript, interactive dashboards, and browser-to-VIKTOR parameter updates.
 
