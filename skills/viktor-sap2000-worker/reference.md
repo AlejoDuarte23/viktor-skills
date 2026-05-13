@@ -79,10 +79,10 @@ worker_integrations = [
 App-side `requirements.txt`:
 
 ```text
-viktor==14.27.3
+viktor>=14.17.0
 ```
 
-Use a VIKTOR SDK version that supports `SAP2000Analysis`. The SDK reference marks `SAP2000Analysis` as available from VIKTOR SDK 14.17.0.
+Use a VIKTOR SDK version that supports `SAP2000Analysis`. The SDK reference marks `SAP2000Analysis` as available from VIKTOR SDK 14.17.0. In real apps, pin this to an available release from your environment once the app installs cleanly.
 
 Worker-side requirements:
 
@@ -386,11 +386,36 @@ The controller should request outputs through `inputs.json`. The worker decides 
 4. Build model lists if requested.
 5. Select one result case or combination at a time.
 6. Call the requested result helper.
-7. Normalize tuple outputs into dictionaries/lists.
+7. Normalize tuple/list outputs into dictionaries/lists.
 8. Write one `output.json`.
 9. Include `status`, `units`, and `warnings`.
 
 Do not silently drop multi-row results. Frame forces and displacements can return many rows per object, station, step, or output case. Store them as lists.
+
+### Comtypes Method Contracts
+
+Ground every direct CSI call in a small input/output contract. With `comtypes`, the same SAP2000 method can return tuples or lists, and generated wrappers may include or omit the return code. The helper functions in `csi_comtypes_helpers.py` normalize these shapes.
+
+| Helper | Comtypes call and inputs | Accepted raw output shapes | Normalized output |
+|---|---|---|---|
+| `get_name_list(...)` | `api_object.GetNameList(0, [])`, fallback `api_object.GetNameList()` | `[NumberNames, Names]`, `(NumberNames, Names, ret)`, `(ret, NumberNames, Names)` | `list[str]` |
+| `get_point_coords(...)` | `SapModel.PointObj.GetCoordCartesian(point_name, 0, 0, 0)` | `[x, y, z]`, `[x, y, z, ret]`, `[ret, x, y, z]` | `(float(x), float(y), float(z))` |
+| `get_point_restraint(...)` | `SapModel.PointObj.GetRestraint(point_name, [0, 0, 0, 0, 0, 0])`, fallback `GetRestraint(point_name)` | `[u1, u2, u3, r1, r2, r3]`, `[u1, u2, u3, r1, r2, r3, ret]`, `[ret, u1, u2, u3, r1, r2, r3]`, `([u1, u2, u3, r1, r2, r3], ret)` | `list[int]` with six restraint flags |
+| `get_frame_points(...)` | `SapModel.FrameObj.GetPoints(frame_name, "", "")` | `[point_i, point_j]`, `[point_i, point_j, ret]`, `[ret, point_i, point_j]` | `(str(point_i), str(point_j))` |
+| `call_joint_react(...)` | `SapModel.Results.JointReact(joint_name, 0, 0, [], [], [], [], [], [], [], [], [], [], [])`, fallback `JointReact(joint_name, 0)` | `[NumberResults, Obj, Elm, LoadCase, StepType, StepNum, F1, F2, F3, M1, M2, M3]`, plus `ret` first or last | first result row as a dict with `f1`, `f2`, `f3`, `m1`, `m2`, `m3` |
+| `call_joint_displ(...)` | `SapModel.Results.JointDispl(point_name, 0, 0, [], [], [], [], [], [], [], [], [], [], [])`, fallback `JointDispl(point_name, 0)` | `[NumberResults, Obj, Elm, LoadCase, StepType, StepNum, U1, U2, U3, R1, R2, R3]`, plus `ret` first or last | one row dict per result with `u1`, `u2`, `u3`, `r1`, `r2`, `r3` |
+| `call_frame_force(...)` | `SapModel.Results.FrameForce(frame_name, 0, 0, [], [], [], [], [], [], [], [], [], [], [], [], [])`, fallback `FrameForce(frame_name, 0)` | `[NumberResults, Obj, ObjSta, Elm, ElmSta, LoadCase, StepType, StepNum, P, V2, V3, T, M2, M3]`, plus `ret` first or last | one row dict per station with `p`, `v2`, `v3`, `t`, `m2`, `m3` |
+| `call_base_react(...)` | `SapModel.Results.BaseReact(0, [], [], [], [], [], [], [], [], [], 0.0, 0.0, 0.0)`, fallback `BaseReact()` | `[NumberResults, LoadCase, StepType, StepNum, FX, FY, FZ, MX, MY, MZ, GX, GY, GZ]`, plus `ret` first or last | one row dict per result with base reactions and global point |
+| `call_modal_period(...)` | `SapModel.Results.ModalPeriod(0, [], [], [], [], [], [], [])`, fallback `ModalPeriod()` | `[NumberResults, LoadCase, StepType, StepNum, Period, Frequency, CircFreq, EigenValue]`, plus `ret` first or last | one row dict per mode |
+| `get_available_database_tables(...)` | `SapModel.DatabaseTables.GetAvailableTables()` | tuple/list containing one or more string arrays | `list[str]` table keys |
+| `parse_table_for_display_array_result(...)` | `SapModel.DatabaseTables.GetTableForDisplayArray(TableKey=..., GroupName=...)`, fallback positional call | tuple/list containing field keys, record count, flat table data, and optional return code | `(columns, rows)` and downstream `records` |
+
+Rules for adding a new CSI method:
+
+1. Write down the exact `comtypes` call inputs before coding the parser.
+2. Capture at least one raw return from the target worker machine.
+3. Add a parser fixture for that raw return shape.
+4. Normalize to JSON-safe values before returning from the worker.
 
 ## Database Table Export Tool
 
@@ -482,16 +507,19 @@ Implementation notes:
 
 ## CSI OAPI Return Parsing
 
-CSI OAPI methods often return tuples with output arguments and a return code. The order can differ between examples, `comtypes`, generated type-library wrappers, and CSI versions.
+CSI OAPI methods often return tuples or lists with output arguments and a return code. The order can differ between examples, `comtypes`, generated type-library wrappers, and CSI versions. Some generated wrappers return compact output-only lists without an explicit return code.
 
 Rules:
 
 - Always check the return code.
 - Prefer helper functions that parse by shape when wrappers differ.
 - For name-list calls, find the longest list/tuple as the name list and an integer return code.
-- For restraint calls, find the six-value restraint list and the return code.
+- Treat compact name-list outputs such as `[NumberNames, Names]` as successful when `NumberNames` matches `len(Names)`.
+- For scalar output calls such as `PointObj.GetCoordCartesian`, accept `[x, y, z]`, `[x, y, z, ret]`, and `[ret, x, y, z]`.
+- For two-name output calls such as `FrameObj.GetPoints`, accept `[point_i, point_j]`, `[point_i, point_j, ret]`, and `[ret, point_i, point_j]`.
+- For restraint calls, accept nested or flat six-value restraint lists, with or without an explicit return code.
 - For result calls, parse expected arrays by position only after validating tuple length.
-- Keep debug failures explicit: include method name and the raw returned tuple in the exception.
+- Keep debug failures explicit: include method name and the raw returned value in the exception.
 
 Useful calls:
 
@@ -591,7 +619,7 @@ Recommended boundaries:
 Before finishing a SAP2000 worker app, verify:
 
 - `viktor.config.toml` includes `worker_integrations = ["sap2000"]`.
-- App `requirements.txt` pins a VIKTOR SDK that supports `SAP2000Analysis`.
+- App `requirements.txt` uses a VIKTOR SDK that supports `SAP2000Analysis`.
 - Worker Python has `comtypes` installed.
 - SAP2000 path, version, and launch mode are documented.
 - Controller uses `vkt.sap2000.SAP2000Analysis`, not direct COM automation.

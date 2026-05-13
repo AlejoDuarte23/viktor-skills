@@ -59,6 +59,54 @@ C:\Path\To\python.exe run_sap2000_model.py
 type output.json
 ```
 
+## Raw Comtypes Method Probe
+
+Use this when a parser fails or a SAP2000/comtypes version returns a new shape. Run it in the same temporary folder and with the same Python executable as the worker.
+
+```python
+import comtypes
+import comtypes.client
+
+
+def first_sequence(raw):
+    for value in raw:
+        if isinstance(value, (list, tuple)):
+            return value
+    return []
+
+
+comtypes.CoInitialize()
+try:
+    helper = comtypes.client.CreateObject("SAP2000v1.Helper")
+    sap_object = helper.GetObject("CSI.SAP2000.API.SapObject")
+    model = sap_object.SapModel
+
+    point_names = model.PointObj.GetNameList(0, [])
+    print("PointObj.GetNameList(0, []) ->", repr(point_names))
+
+    names = first_sequence(point_names)
+    first_point = str(names[0]) if names else "1"
+    print("PointObj.GetCoordCartesian(point, 0, 0, 0) ->", repr(
+        model.PointObj.GetCoordCartesian(first_point, 0, 0, 0)
+    ))
+    print("PointObj.GetRestraint(point, [0, 0, 0, 0, 0, 0]) ->", repr(
+        model.PointObj.GetRestraint(first_point, [0, 0, 0, 0, 0, 0])
+    ))
+
+    frame_names = model.FrameObj.GetNameList(0, [])
+    print("FrameObj.GetNameList(0, []) ->", repr(frame_names))
+    frames = first_sequence(frame_names)
+    if frames:
+        first_frame = str(frames[0])
+        print("FrameObj.GetPoints(frame, '', '') ->", repr(
+            model.FrameObj.GetPoints(first_frame, "", "")
+        ))
+finally:
+    comtypes.CoUninitialize()
+```
+
+Paste raw outputs into parser fixtures before changing helper code. Keep the exact method input arguments in the fixture name or test body.
+
 ## Launch Test
 
 Create `inputs.json`:

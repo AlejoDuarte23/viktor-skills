@@ -25,7 +25,7 @@ worker_integrations = [
 ```
 
 ```text
-viktor==14.27.3
+viktor>=14.17.0
 ```
 
 Install worker-side dependencies into the Python executable selected during worker installation:
@@ -378,17 +378,21 @@ class TestController(unittest.TestCase):
         self.assertEqual(result.column_headers[0], "Joint")
 ```
 
-## Tuple Parser Unit Test
+## CSI Return Parser Unit Test
 
-Keep COM tuple parsing testable without SAP2000.
+Keep COM return parsing testable without SAP2000.
 
 ```python
 import unittest
 
-from csi_comtypes_helpers import parse_name_list_result
+from csi_comtypes_helpers import (
+    parse_name_list_result,
+    parse_point_coords_result,
+    parse_restraint_result,
+)
 
 
-class TestComTupleParsing(unittest.TestCase):
+class TestComReturnParsing(unittest.TestCase):
 
     def test_name_list_parser_accepts_common_order(self):
         names, ret = parse_name_list_result((2, ["ULS1", "ULS2"], 0), "RespCombo.GetNameList")
@@ -399,4 +403,21 @@ class TestComTupleParsing(unittest.TestCase):
         names, ret = parse_name_list_result((0, 2, ["ULS1", "ULS2"]), "RespCombo.GetNameList")
         self.assertEqual(ret, 0)
         self.assertEqual(names, ["ULS1", "ULS2"])
+
+    def test_name_list_parser_accepts_compact_list_without_ret(self):
+        names, ret = parse_name_list_result([3, ("3", "4", "5")], "PointObj.GetNameList")
+        self.assertEqual(ret, 0)
+        self.assertEqual(names, ["3", "4", "5"])
+
+    def test_coord_parser_accepts_list_without_ret(self):
+        x, y, z = parse_point_coords_result([1.0, 2.0, 3.0], "3")
+        self.assertEqual((x, y, z), (1.0, 2.0, 3.0))
+
+    def test_coord_parser_accepts_list_with_ret_last(self):
+        x, y, z = parse_point_coords_result([1.0, 2.0, 3.0, 0], "3")
+        self.assertEqual((x, y, z), (1.0, 2.0, 3.0))
+
+    def test_restraint_parser_accepts_flat_list_without_ret(self):
+        restraint = parse_restraint_result([1, 1, 1, 0, 0, 0], "3")
+        self.assertEqual(restraint, [1, 1, 1, 0, 0, 0])
 ```

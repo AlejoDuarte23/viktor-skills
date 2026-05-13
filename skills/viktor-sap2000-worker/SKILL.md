@@ -19,7 +19,8 @@ Do not automate SAP2000 directly from VIKTOR controller code. The controller sta
 - Use explicit JSON contracts for inputs and outputs.
 - Keep units explicit in params, payloads, and result headers.
 - Check CSI return codes.
-- Parse CSI tuple outputs defensively because return order can differ across wrappers and versions.
+- Parse CSI tuple/list outputs defensively because return order and compact return shapes can differ across wrappers and versions.
+- Ground every direct `comtypes` call with its input arguments, accepted raw output shapes, and normalized helper output.
 - Close SAP2000 only when the worker launched it.
 - Mock worker execution in tests; manually test SAP2000 on the Windows worker.
 

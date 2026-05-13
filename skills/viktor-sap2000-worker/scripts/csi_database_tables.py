@@ -8,6 +8,7 @@ method directly.
 
 from __future__ import annotations
 
+from collections.abc import Sequence as RuntimeSequence
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 
@@ -36,7 +37,13 @@ def require_ret_zero(ret: Any, method_name: str) -> None:
 
 
 def _is_sequence(value: Any) -> bool:
-    return isinstance(value, (list, tuple))
+    return isinstance(value, RuntimeSequence) and not isinstance(value, (str, bytes, bytearray))
+
+
+def _result_items(result: Any, method_name: str) -> Tuple[Any, ...]:
+    if not _is_sequence(result):
+        raise RuntimeError(f"{method_name} returned non-sequence: {type(result)} {result!r}")
+    return tuple(result)
 
 
 def _is_string_sequence(value: Any) -> bool:
@@ -68,10 +75,13 @@ def _coerce_scalar(value: Any, numeric: bool = False) -> Union[str, int, float, 
 
 
 def get_available_database_tables(model: Any) -> List[str]:
-    """Return available CSI database table keys for the open model."""
+    """Return available CSI database table keys for the open model.
+
+    Input contract: DatabaseTables.GetAvailableTables().
+    Output contract: accept tuple/list returns containing one or more string arrays.
+    """
     result = model.DatabaseTables.GetAvailableTables()
-    if not isinstance(result, tuple):
-        raise RuntimeError(f"DatabaseTables.GetAvailableTables returned non-tuple: {result!r}")
+    result = _result_items(result, "DatabaseTables.GetAvailableTables")
 
     string_sequences = [value for value in result if _is_string_sequence(value)]
     if not string_sequences:
@@ -103,7 +113,11 @@ def set_database_table_output_selection(
 
 
 def call_table_for_display_array(model: Any, table_key: str, group_name: str = "") -> Any:
-    """Call GetTableForDisplayArray with keyword fallback for CSI wrappers."""
+    """Call GetTableForDisplayArray with keyword and positional fallbacks.
+
+    Input contract: TableKey and GroupName, with field/table OUT arguments
+    supplied in the positional fallback for generated comtypes wrappers.
+    """
     try:
         return model.DatabaseTables.GetTableForDisplayArray(
             TableKey=str(table_key),
@@ -128,9 +142,9 @@ def parse_table_for_display_array_result(result: Any, table_key: str) -> Tuple[L
     (ret, table_version, fields_keys_included, number_records, table_data)
 
     and fuller COM-style tuples that also include FieldKeyList.
+    List variants of the same shapes are accepted.
     """
-    if not isinstance(result, tuple):
-        raise RuntimeError(f"DatabaseTables.GetTableForDisplayArray({table_key}) returned non-tuple: {result!r}")
+    result = _result_items(result, f"DatabaseTables.GetTableForDisplayArray({table_key})")
 
     ret_candidates = []
     if result and isinstance(result[0], int):

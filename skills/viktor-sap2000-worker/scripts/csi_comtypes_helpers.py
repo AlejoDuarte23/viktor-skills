@@ -7,6 +7,7 @@ on a Windows worker machine for debugging.
 
 from __future__ import annotations
 
+from collections.abc import Sequence as RuntimeSequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
@@ -121,8 +122,18 @@ def require_ret_zero(ret: Any, method_name: str) -> None:
         raise RuntimeError(f"{method_name} failed (ret={ret})")
 
 
+def _is_ret_code(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
 def _is_sequence(value: Any) -> bool:
-    return isinstance(value, (list, tuple))
+    return isinstance(value, RuntimeSequence) and not isinstance(value, (str, bytes, bytearray))
+
+
+def _result_items(result: Any, method_name: str) -> Tuple[Any, ...]:
+    if not _is_sequence(result):
+        raise RuntimeError(f"{method_name} returned non-sequence: {type(result)} {result!r}")
+    return tuple(result)
 
 
 def _to_list(value: Any) -> List[Any]:
@@ -139,34 +150,39 @@ def _to_list(value: Any) -> List[Any]:
 
 
 def _split_result_fields(result: Any, method_name: str, field_count: int) -> Tuple[Any, ...]:
-    """Return output fields from a CSI result tuple and validate the return code.
+    """Return output fields from a CSI result sequence and validate the return code.
 
     Accepts common comtypes wrapper shapes:
-    - (ret, field1, field2, ...)
     - (field1, field2, ..., ret)
+    - (ret, field1, field2, ...)
     - (extra, field1, field2, ..., ret)
+    - (field1, field2, ...) when the wrapper omits the return code
+    - list variants of the same shapes
     """
-    if not isinstance(result, tuple):
-        raise RuntimeError(f"{method_name} returned non-tuple: {type(result)} {result!r}")
+    result = _result_items(result, method_name)
 
     candidates: List[Tuple[int, Tuple[Any, ...]]] = []
 
+    if len(result) == field_count:
+        candidates.append((0, tuple(result)))
+
     if len(result) == field_count + 1:
-        if isinstance(result[0], int):
-            candidates.append((int(result[0]), tuple(result[1:])))
-        if isinstance(result[-1], int):
+        if _is_ret_code(result[-1]):
             candidates.append((int(result[-1]), tuple(result[:-1])))
+        if _is_ret_code(result[0]):
+            candidates.append((int(result[0]), tuple(result[1:])))
 
     if len(result) == field_count + 2:
-        if isinstance(result[-1], int):
+        if _is_ret_code(result[-1]):
             candidates.append((int(result[-1]), tuple(result[1:-1])))
-        if isinstance(result[0], int):
+        if _is_ret_code(result[0]):
             candidates.append((int(result[0]), tuple(result[1 : 1 + field_count])))
 
     if not candidates:
         raise RuntimeError(
             f"Could not parse {method_name} return. "
-            f"Expected {field_count + 1} or {field_count + 2} values, got {len(result)}: {result!r}"
+            f"Expected {field_count}, {field_count + 1}, or {field_count + 2} values, "
+            f"got {len(result)}: {result!r}"
         )
 
     for ret, fields in candidates:
@@ -184,22 +200,39 @@ def _split_result_fields(result: Any, method_name: str, field_count: int) -> Tup
 
 
 def parse_name_list_result(result: Any, method_name: str) -> Tuple[List[str], int]:
-    """Parse common CSI GetNameList return shapes."""
-    if not isinstance(result, tuple):
-        raise RuntimeError(f"{method_name} returned non-tuple: {type(result)} {result!r}")
+    """Parse common CSI GetNameList return shapes.
 
-    ints = [value for value in result if isinstance(value, int)]
-    sequences = [value for value in result if _is_sequence(value)]
+    Some comtypes wrappers return only output arguments, for example
+    [NumberNames, Names]. In that compact shape, the return code is implicit 0.
+    """
+    result = _result_items(result, method_name)
+
+    ints = [int(value) for value in result if _is_ret_code(value)]
+    sequences = [_to_list(value) for value in result if _is_sequence(value)]
     if not ints or not sequences:
         raise RuntimeError(f"Could not parse {method_name} return: {result!r}")
 
-    ret = 0 if 0 in ints else int(ints[-1])
     names = max(sequences, key=len)
+    name_count = len(names)
+
+    if 0 in ints:
+        ret = 0
+    elif len(ints) == 1 and ints[0] == name_count:
+        ret = 0
+    else:
+        ret_candidates = [value for value in ints if value != name_count]
+        ret = int(ret_candidates[-1] if ret_candidates else ints[-1])
+
     return [str(name) for name in names], ret
 
 
 def get_name_list(api_object: Any, method_name: str) -> List[str]:
-    """Call a CSI GetNameList-like method and return names."""
+    """Call a CSI GetNameList-like method and return names.
+
+    Input contract: call method(0, []) first, fallback to method().
+    Output contract: accept [NumberNames, Names], [NumberNames, Names, ret],
+    or [ret, NumberNames, Names], with tuple variants of the same shapes.
+    """
     method = getattr(api_object, method_name)
     try:
         result = method(0, [])
@@ -232,19 +265,42 @@ def get_load_pattern_names(model: Any) -> List[str]:
 
 
 def parse_restraint_result(result: Any, point_name: str) -> List[int]:
-    if not isinstance(result, tuple):
-        raise RuntimeError(f"PointObj.GetRestraint returned non-tuple for {point_name}: {result!r}")
+    """Parse PointObj.GetRestraint output into six integer restraint flags.
+
+    Input contract: GetRestraint(point_name, [0, 0, 0, 0, 0, 0]).
+    Output contract: accept flat or nested six-value restraint arrays, with an
+    optional return code first or last.
+    """
+    result = _result_items(result, f"PointObj.GetRestraint({point_name})")
+
+    if len(result) == 6 and all(isinstance(value, (bool, int)) for value in result):
+        return [int(value) for value in result]
+
+    if len(result) == 7 and _is_ret_code(result[-1]):
+        restraint_values = result[:-1]
+        if all(isinstance(value, (bool, int)) for value in restraint_values):
+            require_ret_zero(result[-1], f"PointObj.GetRestraint({point_name})")
+            return [int(value) for value in restraint_values]
+
+    if len(result) == 7 and _is_ret_code(result[0]):
+        restraint_values = result[1:]
+        if all(isinstance(value, (bool, int)) for value in restraint_values):
+            require_ret_zero(result[0], f"PointObj.GetRestraint({point_name})")
+            return [int(value) for value in restraint_values]
 
     restraint = None
     ret = None
     for value in result:
-        if isinstance(value, int):
+        if _is_ret_code(value):
             ret = value
         elif _is_sequence(value) and len(value) == 6:
             restraint = value
 
     if restraint is None or ret is None:
-        raise RuntimeError(f"Could not parse PointObj.GetRestraint({point_name}) return: {result!r}")
+        if restraint is None:
+            raise RuntimeError(f"Could not parse PointObj.GetRestraint({point_name}) return: {result!r}")
+        ret = 0
+
     require_ret_zero(ret, f"PointObj.GetRestraint({point_name})")
     return [int(value) for value in restraint]
 
@@ -257,30 +313,35 @@ def get_point_restraint(model: Any, point_name: str) -> List[int]:
     return parse_restraint_result(result, str(point_name))
 
 
+def parse_point_coords_result(result: Any, point_name: str) -> Tuple[float, float, float]:
+    """Parse PointObj.GetCoordCartesian output into x, y, z floats.
+
+    Input contract: GetCoordCartesian(point_name, 0, 0, 0).
+    Output contract: accept [x, y, z], [x, y, z, ret], or [ret, x, y, z].
+    """
+    x, y, z = _split_result_fields(result, f"PointObj.GetCoordCartesian({point_name})", 3)
+    return float(x), float(y), float(z)
+
+
 def get_point_coords(model: Any, point_name: str) -> Tuple[float, float, float]:
     result = model.PointObj.GetCoordCartesian(str(point_name), 0, 0, 0)
-    if not isinstance(result, tuple) or len(result) < 4:
-        raise RuntimeError(f"PointObj.GetCoordCartesian({point_name}) returned unexpected value: {result!r}")
+    return parse_point_coords_result(result, str(point_name))
 
-    *coords, ret = result
-    require_ret_zero(ret, f"PointObj.GetCoordCartesian({point_name})")
-    if len(coords) != 3:
-        raise RuntimeError(f"PointObj.GetCoordCartesian({point_name}) returned unexpected coords: {result!r}")
-    return float(coords[0]), float(coords[1]), float(coords[2])
+
+def parse_frame_points_result(result: Any, frame_name: str) -> Tuple[str, str]:
+    """Parse FrameObj.GetPoints output into point_i and point_j names.
+
+    Input contract: GetPoints(frame_name, "", "").
+    Output contract: accept [point_i, point_j], [point_i, point_j, ret], or
+    [ret, point_i, point_j].
+    """
+    point_i, point_j = _split_result_fields(result, f"FrameObj.GetPoints({frame_name})", 2)
+    return str(point_i), str(point_j)
 
 
 def get_frame_points(model: Any, frame_name: str) -> Tuple[str, str]:
     result = model.FrameObj.GetPoints(str(frame_name), "", "")
-    if not isinstance(result, tuple) or len(result) < 3:
-        raise RuntimeError(f"FrameObj.GetPoints({frame_name}) returned unexpected value: {result!r}")
-
-    if isinstance(result[0], int):
-        ret, point_i, point_j = result[0], result[1], result[2]
-    else:
-        point_i, point_j, ret = result[-3], result[-2], result[-1]
-
-    require_ret_zero(ret, f"FrameObj.GetPoints({frame_name})")
-    return str(point_i), str(point_j)
+    return parse_frame_points_result(result, str(frame_name))
 
 
 def get_frame_connectivity(model: Any, frame_names: Iterable[str]) -> List[Dict[str, str]]:
@@ -361,7 +422,12 @@ def select_results_output(model: Any, name: str) -> str:
 
 
 def call_joint_react(model: Any, joint_name: str) -> Any:
-    """Call Results.JointReact with a comtypes-friendly explicit OUT-arg shape."""
+    """Call Results.JointReact with a comtypes-friendly explicit OUT-arg shape.
+
+    Input contract: JointReact(joint_name, 0, NumberResults, Obj, Elm,
+    LoadCase, StepType, StepNum, F1, F2, F3, M1, M2, M3).
+    The OUT arguments are passed as empty lists so comtypes can fill arrays.
+    """
     try:
         return model.Results.JointReact(
             str(joint_name),
@@ -384,20 +450,21 @@ def call_joint_react(model: Any, joint_name: str) -> Any:
 
 
 def parse_joint_react_first_row(result: Any, joint_name: str) -> Dict[str, Any]:
-    if not isinstance(result, tuple):
-        raise RuntimeError(f"Results.JointReact({joint_name}) returned non-tuple: {result!r}")
-
-    if len(result) == 13:
-        if isinstance(result[0], int):
-            ret, number_results, obj, elm, load_case, step_type, step_num, f1, f2, f3, m1, m2, m3 = result
-        else:
-            number_results, obj, elm, load_case, step_type, step_num, f1, f2, f3, m1, m2, m3, ret = result
-    elif len(result) == 14:
-        number_results, obj, elm, load_case, step_type, step_num, f1, f2, f3, m1, m2, m3, ret = result[1:]
-    else:
-        raise RuntimeError(f"Results.JointReact({joint_name}) returned unexpected length: {result!r}")
-
-    require_ret_zero(ret, f"Results.JointReact({joint_name})")
+    """Parse Results.JointReact output and return the first force/moment row."""
+    (
+        number_results,
+        obj,
+        elm,
+        load_case,
+        step_type,
+        step_num,
+        f1,
+        f2,
+        f3,
+        m1,
+        m2,
+        m3,
+    ) = _split_result_fields(result, f"Results.JointReact({joint_name})", 12)
     if int(number_results or 0) <= 0 or not load_case:
         return {
             "result_name": "",
@@ -453,6 +520,7 @@ def get_support_reactions(
 
 
 def call_frame_force(model: Any, frame_name: str, item_type: int = 0) -> Any:
+    """Call Results.FrameForce with explicit comtypes OUT arrays."""
     try:
         return model.Results.FrameForce(
             str(frame_name),
@@ -477,6 +545,7 @@ def call_frame_force(model: Any, frame_name: str, item_type: int = 0) -> Any:
 
 
 def parse_frame_force_rows(result: Any, frame_name: str) -> List[Dict[str, Any]]:
+    """Parse Results.FrameForce output into one dict per frame station row."""
     fields = _split_result_fields(result, f"Results.FrameForce({frame_name})", 14)
 
     (
@@ -564,6 +633,7 @@ def get_frame_forces(
 
 
 def call_joint_displ(model: Any, point_name: str, item_type: int = 0, absolute: bool = False) -> Any:
+    """Call Results.JointDispl or JointDisplAbs with explicit comtypes OUT arrays."""
     method = model.Results.JointDisplAbs if absolute else model.Results.JointDispl
 
     try:
@@ -588,6 +658,7 @@ def call_joint_displ(model: Any, point_name: str, item_type: int = 0, absolute: 
 
 
 def parse_joint_displ_rows(result: Any, point_name: str, absolute: bool = False) -> List[Dict[str, Any]]:
+    """Parse Results.JointDispl output into one dict per displacement row."""
     method_name = "JointDisplAbs" if absolute else "JointDispl"
     fields = _split_result_fields(result, f"Results.{method_name}({point_name})", 12)
 
@@ -673,6 +744,7 @@ def get_joint_displacements(
 
 
 def call_base_react(model: Any) -> Any:
+    """Call Results.BaseReact with explicit comtypes OUT arrays."""
     try:
         return model.Results.BaseReact(
             0,
@@ -694,6 +766,7 @@ def call_base_react(model: Any) -> Any:
 
 
 def parse_base_react_rows(result: Any) -> List[Dict[str, Any]]:
+    """Parse Results.BaseReact output into one dict per base reaction row."""
     fields = _split_result_fields(result, "Results.BaseReact", 13)
 
     (
@@ -764,6 +837,7 @@ def get_base_reactions(model: Any, result_names: Iterable[str]) -> List[Dict[str
 
 
 def call_modal_period(model: Any) -> Any:
+    """Call Results.ModalPeriod with explicit comtypes OUT arrays."""
     try:
         return model.Results.ModalPeriod(
             0,
@@ -780,6 +854,7 @@ def call_modal_period(model: Any) -> Any:
 
 
 def parse_modal_period_rows(result: Any) -> List[Dict[str, Any]]:
+    """Parse Results.ModalPeriod output into one dict per modal row."""
     fields = _split_result_fields(result, "Results.ModalPeriod", 8)
 
     (
