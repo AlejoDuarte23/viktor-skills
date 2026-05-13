@@ -1,0 +1,15 @@
+{
+  "$schema": "https://code.claude.com/schemas/marketplace.json",
+  "name": "viktor-skills",
+  "owner": {
+    "name": "Alejo Duarte",
+    "url": "https://github.com/AlejoDuarte23"
+  },
+  "plugins": [
+    {
+      "name": "viktor-skills",
+      "source": "./",
+      "description": "Agent skills for building, repairing, and reviewing VIKTOR engineering apps."
+    }
+  ]
+}

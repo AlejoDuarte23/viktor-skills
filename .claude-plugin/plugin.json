@@ -1,0 +1,9 @@
+{
+  "$schema": "https://code.claude.com/schemas/plugin.json",
+  "name": "viktor-skills",
+  "description": "Agent skills for building, repairing, and reviewing VIKTOR engineering apps.",
+  "author": {
+    "name": "Alejo Duarte"
+  },
+  "repository": "https://github.com/AlejoDuarte23/viktor-skills"
+}

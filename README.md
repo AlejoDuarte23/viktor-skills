@@ -8,66 +8,48 @@ Each skill lives in `skills/<skill-name>/` and contains:
 - `reference.md`
 - `examples.md`
 
-## Install For Codex
+## Quick Install
 
-From this repository:
-
-```bash
-mkdir -p ~/.codex/skills
-cp -R skills/* ~/.codex/skills/
-```
-
-Or symlink them so local repo edits are picked up:
+Install the skills into Claude Code and Codex with the open `skills` CLI:
 
 ```bash
-mkdir -p ~/.codex/skills
-for skill in skills/*; do
-  ln -sfn "$(pwd)/$skill" "$HOME/.codex/skills/$(basename "$skill")"
-done
+npx skills add AlejoDuarte23/viktor-skills --skill '*' -a claude-code -a codex -g
 ```
 
-Restart Codex if the skills do not appear in the current session.
+Use `-g` for a global user install. Omit `-g` to install into the current project. Install all skills, not only `viktor`; the router skill links to the specialized VIKTOR skills.
 
-## Install For Claude Code
+## Codex
 
-Install globally for your user:
+For Codex, use the `npx skills` command above. After installing, start a new Codex thread and mention the router skill:
 
-```bash
-mkdir -p ~/.claude/skills
-cp -R skills/* ~/.claude/skills/
+```text
+$viktor
 ```
 
-Or symlink them:
+Codex can also pick the skill automatically when you ask for VIKTOR app work.
 
-```bash
-mkdir -p ~/.claude/skills
-for skill in skills/*; do
-  ln -sfn "$(pwd)/$skill" "$HOME/.claude/skills/$(basename "$skill")"
-done
-```
+## Claude Code
 
-Install only for one project:
-
-```bash
-mkdir -p /path/to/project/.claude/skills
-cp -R skills/* /path/to/project/.claude/skills/
-```
-
-Claude Code can invoke a skill directly with:
+In Claude Code, invoke the router with:
 
 ```text
 /viktor
 ```
 
-Restart Claude Code if the `.claude/skills` directory did not exist when the session started.
+## Claude Code Marketplace
 
-## Update Installed Skills
+Claude Code can also install this repository as a plugin marketplace:
 
-If copied:
-
-```bash
-cp -R skills/* ~/.codex/skills/
-cp -R skills/* ~/.claude/skills/
+```text
+/plugin marketplace add AlejoDuarte23/viktor-skills
+/plugin install viktor-skills@viktor-skills
+/reload-plugins
 ```
 
-If symlinked, pull or edit this repository; no copy step is needed.
+Marketplace plugin skills are namespaced, so invoke the router with:
+
+```text
+/viktor-skills:viktor
+```
+
+See [INSTALL.md](INSTALL.md) for Windows PowerShell, manual copy, update, and troubleshooting notes.
