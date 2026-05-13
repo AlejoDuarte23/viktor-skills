@@ -70,7 +70,13 @@ class PandocNotInstalledError(RuntimeError):
     """Raised when the pandoc executable is unavailable."""
 
 
-def export_docx(markdown_path: Path, output_docx: Path, resource_dir: Path | None = None) -> Path:
+def export_docx(
+    markdown_path: Path,
+    output_docx: Path,
+    resource_dir: Path | None = None,
+    reference_docx: Path | None = None,
+    pagebreak_filter: Path | None = None,
+) -> Path:
     pandoc_path = shutil.which("pandoc")
     if pandoc_path is None:
         raise PandocNotInstalledError(
@@ -92,6 +98,11 @@ def export_docx(markdown_path: Path, output_docx: Path, resource_dir: Path | Non
         "--output",
         str(output_docx),
     ]
+    if reference_docx is not None:
+        command.extend(["--reference-doc", str(reference_docx.resolve())])
+    if pagebreak_filter is not None:
+        command.extend(["--lua-filter", str(pagebreak_filter.resolve())])
+
     subprocess.run(command, check=True, cwd=resource_dir)
     return output_docx
 ```
@@ -179,6 +190,7 @@ class Controller(vkt.Controller):
                     CalculationReport(params).render_word_markdown(),
                     encoding="utf-8",
                 )
+                # Keep this file during debugging and inspect it before blaming Word.
                 export_docx(markdown_path, docx_path)
                 return vkt.DownloadResult(
                     file_content=docx_path.read_bytes(),
@@ -191,3 +203,23 @@ class Controller(vkt.Controller):
 ```
 
 This is the same focused pattern used by the dist-load app: the parametrization owns the `DownloadButton`, the controller owns the download method, and `app/report/word_export.py` owns the Pandoc call.
+
+## Word-Friendly Tables
+
+Keep Jinja block tags from creating blank lines inside Markdown tables. Render the Markdown first and inspect the `.md` file when Word cells look wrong.
+
+```markdown
+{% if support_nodes %}
+| Joint | X | Y | Z | U1 | U2 | U3 | R1 | R2 | R3 |
+|:------|---:|---:|---:|:--:|:--:|:--:|:--:|:--:|:--:|
+{% for support in support_nodes -%}
+| {{ support.joint }} | {{ "%.2f"|format(support.x) }} | {{ "%.2f"|format(support.y) }} | {{ "%.2f"|format(support.z) }} | {{ support.restraint.u1 }} | {{ support.restraint.u2 }} | {{ support.restraint.u3 }} | {{ support.restraint.r1 }} | {{ support.restraint.r2 }} | {{ support.restraint.r3 }} |
+{% endfor %}
+
+**Coordinates in {{ units.length }}; restraints: 1=fixed, 0=free**
+{% else %}
+*No support nodes found*
+{% endif %}
+```
+
+Prefer short headers and separate columns over packed cells. If a table needs exact Word widths or merged cells, use `python-docx` for that table instead of Markdown.

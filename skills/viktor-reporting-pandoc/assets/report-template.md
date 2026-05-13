@@ -48,5 +48,7 @@ $$
 ## Notes
 
 - Keep Markdown tables simple for reliable Word output.
+- Keep Jinja-generated tables uninterrupted: header row, separator row, data rows, then one blank line after the table.
+- Keep headers short and put units below wide tables.
 - Keep image paths relative to the directory passed to Pandoc with `--resource-path`.
 - Escape backslashes in Python strings or use raw strings for LaTeX equations.

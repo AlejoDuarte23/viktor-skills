@@ -5,6 +5,10 @@ Official sources:
 - <https://docs.viktor.ai/docs/create-apps/references/viktor-config-toml/>
 - <https://docs.viktor.ai/docs/create-apps/development-tools-and-tips/system-dependencies/>
 - <https://pandoc.org/installing.html>
+- <https://pandoc.org/MANUAL.html#extension-pipe_tables>
+- <https://pandoc.org/MANUAL.html#option--reference-doc>
+- <https://github.com/pandoc-ext/pagebreak>
+- <https://jinja.palletsprojects.com/en/stable/templates/#whitespace-control>
 - <https://github.com/microsoft/winget-pkgs/tree/master/manifests/j/JohnMacFarlane/Pandoc>
 
 ## VIKTOR Config
@@ -77,6 +81,17 @@ subprocess.run(command, check=True, cwd=resource_dir)
 
 Use `--resource-path` when Markdown references local images. Set `cwd` to the template or output directory so relative paths resolve consistently.
 
+Optional Word controls:
+
+```python
+if reference_docx is not None:
+    command.extend(["--reference-doc", str(reference_docx)])
+if pagebreak_filter is not None:
+    command.extend(["--lua-filter", str(pagebreak_filter)])
+```
+
+Use `--reference-doc` for Word styles, page size, margins, and the default table style. Use a pagebreak Lua filter when Markdown contains standalone `\newpage` paragraphs that must become DOCX page breaks.
+
 ## Markdown Syntax For Word Reports
 
 ### Headings
@@ -120,7 +135,48 @@ Use `\mathrm{}` for units so Pandoc converts them as equation text instead of va
 | Wind load | $q_z GC_p$ | -0.032 | ksf |
 ```
 
-Keep tables simple. For heavily styled tables, generate a reference `.docx` outside the app and pass it with `--reference-doc`, but avoid that until the report needs exact Word branding.
+Keep tables simple. Pipe tables are reliable for short, single-line cells. They are weak for wide engineering tables, fixed Word column widths, merged cells, or long packed text.
+
+Rules for Word-friendly pipe tables:
+
+- Render the Jinja template to a debug `.md` file before Pandoc and inspect that file when the DOCX table is wrong.
+- Keep each table uninterrupted: header row, separator row, data rows, then one blank line after the table.
+- Do not leave blank lines inside the table from `{% if %}`, `{% for %}`, or `{% endfor %}` tags.
+- Use `trim_blocks=True` and `lstrip_blocks=True` in the Jinja environment.
+- Use Jinja whitespace control only where needed. `{%-` and `-%}` can remove required newlines if used aggressively.
+- Keep headers short. Move units to a note below the table when units make columns too wide.
+- Split dense text cells into separate columns. For restraints, prefer `U1 | U2 | U3 | R1 | R2 | R3` over one long cell.
+- Escape pipe characters in data values before rendering table cells.
+
+Good support table pattern:
+
+```markdown
+{% if support_nodes %}
+| Joint | X | Y | Z | U1 | U2 | U3 | R1 | R2 | R3 |
+|:------|---:|---:|---:|:--:|:--:|:--:|:--:|:--:|:--:|
+{% for support in support_nodes -%}
+| {{ support.joint }} | {{ "%.2f"|format(support.x) }} | {{ "%.2f"|format(support.y) }} | {{ "%.2f"|format(support.z) }} | {{ support.restraint.u1 }} | {{ support.restraint.u2 }} | {{ support.restraint.u3 }} | {{ support.restraint.r1 }} | {{ support.restraint.r2 }} | {{ support.restraint.r3 }} |
+{% endfor %}
+
+**Coordinates in {{ units.length }}; restraints: 1=fixed, 0=free**
+{% else %}
+*No support nodes found*
+{% endif %}
+```
+
+If Word still squeezes columns, create a reference `.docx` with the desired `Table` style and pass it with `--reference-doc`. If exact cell widths, merged headers, repeated headers, or strict layout are required, generate the DOCX tables with `python-docx` instead of Markdown.
+
+### Page Breaks
+
+For DOCX output, do not assume a bare `\newpage` will always become a Word page break. Prefer a Pandoc pagebreak Lua filter. Keep the marker as its own paragraph:
+
+```markdown
+Paragraph before page break
+
+\newpage
+
+Paragraph after page break
+```
 
 ### Images
 
@@ -142,3 +198,9 @@ if shutil.which("pandoc") is None:
 ```
 
 Catch `subprocess.CalledProcessError` and show a short message. During development, inspect the failed Markdown file and run the printed Pandoc command manually.
+
+For table failures, keep the rendered Markdown file and test it directly:
+
+```powershell
+pandoc calculation-report.md --from=markdown+tex_math_dollars+pipe_tables --to=docx --standalone --output calculation-report.docx
+```
