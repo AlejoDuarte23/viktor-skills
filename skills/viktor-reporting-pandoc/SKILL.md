@@ -25,6 +25,8 @@ Use this skill when a VIKTOR app should generate a `.docx` report from Markdown 
 - Use `$...$` for inline equations and `$$...$$` for display equations.
 - Use LaTeX syntax for equation variables, fractions, superscripts, and units, for example `\frac{L}{2}` and `\mathrm{kip}`.
 - Use Markdown pipe tables for simple result tables.
+- Add a short explanatory paragraph after each heading and before each table, figure, or equation block so the DOCX reads like a real report instead of a data dump.
+- Explain what the section contains, how to read the values, and what units or sign conventions apply.
 - Keep each pipe table as one uninterrupted Markdown block: header, separator, all rows, then one blank line after the table.
 - Do not put Jinja block tags where they create blank lines inside a table. Use `trim_blocks=True`, `lstrip_blocks=True`, and `{%- ... -%}` carefully.
 - Keep table headers short. Put units in a note below the table when unit labels make columns too wide.

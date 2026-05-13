@@ -37,15 +37,19 @@ app
 
 ## Summary
 
-Generated for {{ project_name }}.
+This report summarizes the governing inputs, calculation basis, and tabulated results for {{ project_name }}. Values are generated from the current VIKTOR parameters at the time the report is downloaded.
 
 ## Governing Equation
+
+The governing equation defines the relationship used to calculate the reported line demand. Symbols are kept in equation form so they remain readable after conversion to Word.
 
 $$
 P = w L_{trib}
 $$
 
 ## Results
+
+The following table lists the calculated result rows used by the report. Numeric values are rounded for presentation; use the source model or exported data when exact machine precision is required.
 
 | Item | Equation | Value | Unit |
 | --- | --- | ---: | --- |
@@ -210,6 +214,8 @@ Keep Jinja block tags from creating blank lines inside Markdown tables. Render t
 
 ```markdown
 {% if support_nodes %}
+The following table lists the restrained joints used for support reaction extraction. Coordinates are reported in the model length unit, and each restraint flag uses `1` for fixed and `0` for free.
+
 | Joint | X | Y | Z | U1 | U2 | U3 | R1 | R2 | R3 |
 |:------|---:|---:|---:|:--:|:--:|:--:|:--:|:--:|:--:|
 {% for support in support_nodes -%}
@@ -218,7 +224,7 @@ Keep Jinja block tags from creating blank lines inside Markdown tables. Render t
 
 **Coordinates in {{ units.length }}; restraints: 1=fixed, 0=free**
 {% else %}
-*No support nodes found*
+No support nodes were found. Confirm that restraints are assigned before using this report for support reactions.
 {% endif %}
 ```
 

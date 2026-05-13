@@ -2,7 +2,7 @@
 
 ## Summary
 
-Prepared for {{ project_name }}.
+This report summarizes the inputs, governing checks, and calculated results for {{ project_name }}. It is intended to document the calculation path and provide traceable values for review.
 
 | Item | Value |
 | --- | --- |
@@ -11,6 +11,8 @@ Prepared for {{ project_name }}.
 
 ## Inputs
 
+The following table lists the report inputs used by the calculation. Symbols match the notation used in the equations, and units are shown in the final column.
+
 | Parameter | Symbol | Value | Unit |
 | --- | --- | ---: | --- |
 {% for item in inputs %}
@@ -18,6 +20,8 @@ Prepared for {{ project_name }}.
 {% endfor %}
 
 ## Equations
+
+This section records the governing expressions used to produce the reported values. Equations are rendered with Pandoc math so they remain readable in the generated Word document.
 
 Inline equations use `$...$`, for example $L_{trib} = \frac{L_{joist}}{2}$.
 
@@ -35,6 +39,8 @@ $$
 
 ## Results
 
+The results table summarizes the calculated checks. Values are rounded for reporting, and the status column indicates whether each check satisfies the selected criterion.
+
 | Check | Equation | Value | Unit | Status |
 | --- | --- | ---: | --- | --- |
 {% for row in result_rows %}
@@ -42,6 +48,8 @@ $$
 {% endfor %}
 
 ## Image
+
+The figure below provides visual context for the calculation or load path described in the report.
 
 ![Load path diagram](images/load-path.png){width=5in}
 

@@ -126,6 +126,45 @@ $P = 4.25\ \mathrm{kip}$
 
 Use `\mathrm{}` for units so Pandoc converts them as equation text instead of variables.
 
+### Section Narrative
+
+Write each Markdown section as a report section, not only as a heading followed by a table. Add one short paragraph between the heading and the transformed content.
+
+For each section, include:
+
+- What the section contains.
+- How to read the table, figure, or equation.
+- Which units, sign conventions, filters, or governing assumptions apply.
+- What empty data means when a section has no rows.
+
+Good pattern:
+
+```markdown
+## Reaction Loads
+
+This section summarizes the support reactions recovered from the selected SAP2000 load combinations. Positive forces follow the global SAP2000 axes, and moments are reported about the corresponding global axes. Use these values to check support demand and foundation load transfer.
+
+{% if joint_reactions %}
+| Joint | Combination | F1 | F2 | F3 | M1 | M2 | M3 |
+|:------|:------------|---:|---:|---:|---:|---:|---:|
+...
+{% else %}
+No reaction results were available for the selected combinations. Check that the model was analyzed and that the requested combinations are selected for output.
+{% endif %}
+```
+
+Avoid:
+
+```markdown
+## Reaction Loads
+
+| Joint | Combination | F1 | F2 | F3 |
+|:------|:------------|---:|---:|---:|
+...
+```
+
+The second version converts to Word, but it reads like exported data rather than an engineering report.
+
 ### Tables
 
 ```markdown
@@ -152,6 +191,8 @@ Good support table pattern:
 
 ```markdown
 {% if support_nodes %}
+The following table lists the restrained joints used for support reaction extraction. Coordinates are reported in the model length unit, and each restraint flag uses `1` for fixed and `0` for free.
+
 | Joint | X | Y | Z | U1 | U2 | U3 | R1 | R2 | R3 |
 |:------|---:|---:|---:|:--:|:--:|:--:|:--:|:--:|:--:|
 {% for support in support_nodes -%}
@@ -160,7 +201,7 @@ Good support table pattern:
 
 **Coordinates in {{ units.length }}; restraints: 1=fixed, 0=free**
 {% else %}
-*No support nodes found*
+No support nodes were found. Confirm that restraints are assigned in SAP2000 before using this report for support reactions.
 {% endif %}
 ```
 
