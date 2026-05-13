@@ -200,18 +200,20 @@ registered_name = "my-app-name"
 python_version = "3.12"
 ```
 
-Then create the platform app with the same registered name and install:
+Then create the platform app with the same registered name and launch with a clean local install:
 
 ```bash
 viktor-cli create-app "My App Name" --registered-name my-app-name
-viktor-cli install
-viktor-cli start
+viktor-cli clean-start
 ```
 
-For a first clean launch, use:
+After `clean-start` succeeds, report the app URL printed by the CLI so the user can open it in the browser.
+
+If dependencies changed later, use:
 
 ```bash
-viktor-cli clean-start
+viktor-cli install
+viktor-cli start
 ```
 
 Use `create-app --init` when you want the CLI to generate starter files. Use `create-app` without `--init` when you already created the local app files.

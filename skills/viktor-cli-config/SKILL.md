@@ -20,6 +20,26 @@ Use this skill when a task touches VIKTOR local development, CLI commands, app c
 9. Re-run `viktor-cli install` after changing `requirements.txt` or adding Python packages.
 10. Use `viktor-cli start`, `run`, `test`, and `publish` according to the development stage. Prefer relying on `registered_name` from the config, or pass the same name with `--registered-name` when being explicit.
 
+### First-Run Example
+
+When local files already exist but the platform app has not been registered yet, do this before `start`:
+
+```bash
+viktor-cli create-app "SAP2000 Model Reader" --registered-name sap2000-reader-app
+```
+
+Confirm `viktor.config.toml` contains the same registered name:
+
+```toml
+registered_name = "sap2000-reader-app"
+```
+
+Then launch with a clean install and give the user the app URL printed by the CLI:
+
+```bash
+viktor-cli clean-start
+```
+
 ## Load When Needed
 
 - Read [reference.md](reference.md) for config keys, app types, registered app names, dependency rules, CLI commands, and publishing notes.

@@ -62,6 +62,19 @@ Load:
 - `viktor-table-data-view`
 - `viktor-geometry-view` if model preview is required
 
+## SAP2000 Worker App
+
+Request: "Run SAP2000 from a VIKTOR app and extract support reactions."
+
+Load:
+
+- `viktor-core`
+- `viktor-parametrization`
+- `viktor-styling`
+- `viktor-sap2000-worker`
+- `viktor-table-data-view`
+- `viktor-geometry-view` if model preview is required
+
 ## REST Or SDK Automation
 
 Request: "Use VIKTOR APIs to list workspaces and trigger a computation."
@@ -79,6 +92,16 @@ Load:
 
 - `viktor-cli-config`
 - `viktor-core` if the change affects app structure
+
+## Automated Tests And Mocks
+
+Request: "Add tests for the VIKTOR views and mock the external worker calls."
+
+Load:
+
+- `viktor-core`
+- `viktor-cli-config`
+- `viktor-testing`
 
 ## Word Report Download
 

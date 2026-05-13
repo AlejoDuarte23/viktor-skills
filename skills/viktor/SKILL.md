@@ -12,8 +12,10 @@ Use this skill as the entry point for VIKTOR app work.
 1. Load `../viktor-core/SKILL.md` first to get the app structure, controller pattern, views, and error handling right.
 2. Load `../viktor-parametrization/SKILL.md` second before creating or changing user inputs.
 3. Load `../viktor-styling/SKILL.md` third before writing app titles, descriptions, equations, or input guidance.
-4. Load only the specialized skills that match the requested feature.
-5. Build or review the app against VIKTOR conventions, not generic Python web app conventions.
+4. Load `../viktor-cli-config/SKILL.md` before creating, installing, starting, testing, or publishing an app.
+5. For a new manually created app, use the first-run CLI sequence: create the platform app with `viktor-cli create-app "<App Name>" --registered-name <registered-name>`, confirm `registered_name = "<registered-name>"` in `viktor.config.toml`, run `viktor-cli clean-start`, then give the user the URL printed by the CLI so they can open the app in the browser.
+6. Load only the specialized skills that match the requested feature.
+7. Build or review the app against VIKTOR conventions, not generic Python web app conventions.
 
 ## Specialized Skills
 
@@ -23,9 +25,11 @@ Use this skill as the entry point for VIKTOR app work.
 - `../viktor-aec-data-model/SKILL.md`: Autodesk ACC file selection and AEC Data Model GraphQL queries.
 - `../viktor-staad-pro-worker/SKILL.md`: STAAD.Pro automation through a VIKTOR worker and `PythonAnalysis`.
 - `../viktor-etabs-worker/SKILL.md`: ETABS automation through a VIKTOR worker and `ETABSAnalysis`.
+- `../viktor-sap2000-worker/SKILL.md`: SAP2000 automation through a VIKTOR worker, `SAP2000Analysis`, and CSI OAPI with `comtypes`.
 - `../viktor-rest-api/SKILL.md`: VIKTOR REST API calls for platform-level resources such as workspaces.
 - `../viktor-sdk-api/SKILL.md`: VIKTOR Python SDK API for entity data and running entity computations.
 - `../viktor-cli-config/SKILL.md`: VIKTOR CLI commands, app types, `viktor.config.toml`, Python packages, and system dependencies.
+- `../viktor-testing/SKILL.md`: VIKTOR automated tests, `viktor-cli test`, local controller/view tests, `viktor.testing` mocks, and external worker/service mocks.
 - `../viktor-file-management/SKILL.md`: VIKTOR file upload and download patterns beyond Excel parsing.
 - `../viktor-reporting-pandoc/SKILL.md`: Word DOCX reports generated from Markdown with Pandoc and exposed through `DownloadButton`.
 - `../viktor-llm/SKILL.md`: VIKTOR built-in LLM, tool use, vision, and LLM chat inputs.

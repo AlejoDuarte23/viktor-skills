@@ -80,17 +80,23 @@ Worker-side requirements:
 - Windows machine or Windows server where the VIKTOR worker is installed.
 - ETABS installed on that same machine with a valid license.
 - Python executable selected during worker installation.
-- `pywin32` and `comtypes` installed into that exact Python environment.
+- `comtypes` installed into that exact Python environment.
 - The ETABS CSI COM API available for the installed ETABS version.
 - The ETABS program path in `run_etabs_model.py` matches the installed version, for example `C:\Program Files\Computers and Structures\ETABS 22\ETABS.exe`.
 
 Install worker Python dependencies with the Python executable selected during worker setup:
 
 ```powershell
-C:\Path\To\python.exe -m pip install pywin32 comtypes
+C:\Path\To\python.exe -m pip install comtypes
 ```
 
-Use `where python` on Windows to help find Python executables. Installing `comtypes` and `pywin32` into a different environment than the one selected by the worker is a common cause of worker failures.
+Use `where python` on Windows to help find Python executables. Installing `comtypes` into a different environment than the one selected by the worker is a common cause of worker failures.
+
+Project standard:
+
+- Prefer `comtypes` for both ETABS and SAP2000 worker scripts.
+- Do not use `win32com.client`, `VARIANT`, or `EnsureDispatch` in new CSI worker code.
+- Install `pywin32` only when an existing project still imports `pythoncom` or `win32com`; do not make it part of the new default pattern.
 
 ## Local ETABS Execution Assumptions
 
@@ -118,7 +124,7 @@ The VIKTOR controller should:
 - Fetch the output with `get_output_file("output.json")`.
 - Decode JSON and validate required keys before building VIKTOR results.
 - Convert known worker failures to `vkt.UserError` messages that tell the user what to fix.
-- Avoid importing `comtypes`, `pythoncom`, or CSI API modules in app-side controller code.
+- Avoid importing `comtypes` or CSI API modules in app-side controller code.
 
 The controller should not depend on live ETABS objects. Its contract with the worker is files in, files out.
 
@@ -127,7 +133,7 @@ The controller should not depend on live ETABS objects. Its contract with the wo
 The worker script should:
 
 - Read `inputs.json` from `Path.cwd()`.
-- Initialize COM before using ETABS through `pythoncom.CoInitialize()`.
+- Initialize COM before using ETABS through `comtypes.CoInitialize()`.
 - Start ETABS through `comtypes.client.CreateObject("ETABSv1.Helper")`.
 - Create or open the ETABS model.
 - Set model units explicitly, for example `InitializeNewModel(9)` in the public sample for millimeter units.
@@ -139,7 +145,7 @@ The worker script should:
 - Convert all output values to JSON-serializable types.
 - Write `output.json` into `Path.cwd()`.
 - Close ETABS with `ApplicationExit(False)` when the script started the ETABS instance.
-- Call `pythoncom.CoUninitialize()` in a `finally` block after COM work is complete.
+- Call `comtypes.CoUninitialize()` in a `finally` block after COM work is complete.
 
 Keep the worker script independent from VIKTOR imports. It should be runnable from a Windows terminal for debugging:
 
@@ -272,7 +278,7 @@ Worker-side handling:
 
 Common failures:
 
-- `comtypes` or `pywin32` is not installed in the worker-selected Python environment.
+- `comtypes` is not installed in the worker-selected Python environment.
 - The worker is installed but not running or not connected to the right VIKTOR environment.
 - `worker_integrations = ["etabs"]` is missing from `viktor.config.toml`.
 - The ETABS path points to a different version or does not exist.
@@ -303,7 +309,7 @@ Before finishing an ETABS worker app, verify:
 
 - `viktor.config.toml` includes `worker_integrations = ["etabs"]`.
 - App `requirements.txt` pins a VIKTOR SDK that supports `ETABSAnalysis`.
-- Worker Python has `pywin32` and `comtypes`.
+- Worker Python has `comtypes`.
 - ETABS path and version are documented and configurable.
 - Controller uses `vkt.etabs.ETABSAnalysis`, not direct COM automation.
 - Worker script reads from `Path.cwd()` and writes declared output files to `Path.cwd()`.
@@ -311,3 +317,37 @@ Before finishing an ETABS worker app, verify:
 - ETABS is closed on success and failure.
 - Controller errors are user-facing and actionable.
 - Tests mock ETABS execution.
+
+## Comtypes Launch And Attach Pattern
+
+Use the same CSI helper-method pattern as SAP2000, but with ETABS ProgIDs:
+
+```python
+import comtypes
+import comtypes.client
+
+comtypes.CoInitialize()
+try:
+    helper = comtypes.client.CreateObject("ETABSv1.Helper")
+
+    # Attach to an already running active API instance:
+    etabs_object = helper.GetObject("CSI.ETABS.API.ETABSObject")
+
+    # Or launch by executable path:
+    etabs_object = helper.CreateObject(
+        r"C:\Program Files\Computers and Structures\ETABS 22\ETABS.exe"
+    )
+    etabs_object.ApplicationStart()
+
+    # Or launch by registered ProgID:
+    etabs_object = helper.CreateObjectProgID("CSI.ETABS.API.ETABSObject")
+    etabs_object.ApplicationStart()
+
+    model = etabs_object.SapModel
+finally:
+    comtypes.CoUninitialize()
+```
+
+In real code, choose only one of `GetObject`, `CreateObject`, or `CreateObjectProgID`.
+
+For a reusable implementation that supports both `product="etabs"` and `product="sap2000"`, copy `../viktor-sap2000-worker/scripts/csi_comtypes_helpers.py` into the worker files sent with the analysis.
