@@ -53,6 +53,8 @@ def _is_string_sequence(value: Any) -> bool:
 def _to_list(value: Any) -> List[Any]:
     if value is None:
         return []
+    if isinstance(value, (str, bytes, bytearray)):
+        return [value]
     if isinstance(value, list):
         return value
     if isinstance(value, tuple):

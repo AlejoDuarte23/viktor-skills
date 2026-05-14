@@ -139,6 +139,8 @@ def _result_items(result: Any, method_name: str) -> Tuple[Any, ...]:
 def _to_list(value: Any) -> List[Any]:
     if value is None:
         return []
+    if isinstance(value, (str, bytes, bytearray)):
+        return [value]
     if isinstance(value, list):
         return value
     if isinstance(value, tuple):
@@ -147,6 +149,22 @@ def _to_list(value: Any) -> List[Any]:
         return list(value)
     except TypeError:
         return [value]
+
+
+def _result_row_count(number_results: Any, arrays: Dict[str, List[Any]], method_name: str) -> int:
+    row_count = int(number_results or 0)
+    if row_count <= 0:
+        return 0
+
+    lengths = {name: len(values) for name, values in arrays.items()}
+    mismatched = {name: length for name, length in lengths.items() if length != row_count}
+    if mismatched:
+        raise RuntimeError(
+            f"{method_name} returned inconsistent result array lengths. "
+            f"NumberResults={row_count}, lengths={lengths}"
+        )
+
+    return row_count
 
 
 def _split_result_fields(result: Any, method_name: str, field_count: int) -> Tuple[Any, ...]:
@@ -449,8 +467,8 @@ def call_joint_react(model: Any, joint_name: str) -> Any:
         return model.Results.JointReact(str(joint_name), 0)
 
 
-def parse_joint_react_first_row(result: Any, joint_name: str) -> Dict[str, Any]:
-    """Parse Results.JointReact output and return the first force/moment row."""
+def parse_joint_react_rows(result: Any, joint_name: str) -> List[Dict[str, Any]]:
+    """Parse Results.JointReact output into one dict per reaction row."""
     (
         number_results,
         obj,
@@ -465,56 +483,61 @@ def parse_joint_react_first_row(result: Any, joint_name: str) -> Dict[str, Any]:
         m2,
         m3,
     ) = _split_result_fields(result, f"Results.JointReact({joint_name})", 12)
-    if int(number_results or 0) <= 0 or not load_case:
-        return {
-            "result_name": "",
-            "step_type": "",
-            "step_num": 0.0,
-            "f1": 0.0,
-            "f2": 0.0,
-            "f3": 0.0,
-            "m1": 0.0,
-            "m2": 0.0,
-            "m3": 0.0,
-        }
 
-    index = 0
-    return {
-        "result_name": str(load_case[index]),
-        "step_type": str(step_type[index]),
-        "step_num": float(step_num[index]),
-        "f1": float(f1[index]),
-        "f2": float(f2[index]),
-        "f3": float(f3[index]),
-        "m1": float(m1[index]),
-        "m2": float(m2[index]),
-        "m3": float(m3[index]),
+    lists = {
+        "object": _to_list(obj),
+        "element": _to_list(elm),
+        "load_case": _to_list(load_case),
+        "step_type": _to_list(step_type),
+        "step_num": _to_list(step_num),
+        "f1": _to_list(f1),
+        "f2": _to_list(f2),
+        "f3": _to_list(f3),
+        "m1": _to_list(m1),
+        "m2": _to_list(m2),
+        "m3": _to_list(m3),
     }
+
+    row_count = _result_row_count(number_results, lists, f"Results.JointReact({joint_name})")
+
+    rows: List[Dict[str, Any]] = []
+    for index in range(row_count):
+        rows.append(
+            {
+                "joint": str(joint_name),
+                "object": str(lists["object"][index]),
+                "element": str(lists["element"][index]),
+                "load_case": str(lists["load_case"][index]),
+                "step_type": str(lists["step_type"][index]),
+                "step_num": float(lists["step_num"][index]),
+                "f1": float(lists["f1"][index]),
+                "f2": float(lists["f2"][index]),
+                "f3": float(lists["f3"][index]),
+                "m1": float(lists["m1"][index]),
+                "m2": float(lists["m2"][index]),
+                "m3": float(lists["m3"][index]),
+            }
+        )
+
+    return rows
 
 
 def get_support_reactions(
     model: Any,
     supports: Sequence[Dict[str, Any]],
     result_names: Iterable[str],
-) -> Dict[str, Dict[str, Any]]:
-    reactions: Dict[str, Dict[str, Any]] = {support["joint"]: {} for support in supports}
+) -> Dict[str, Dict[str, List[Dict[str, Any]]]]:
+    reactions: Dict[str, Dict[str, List[Dict[str, Any]]]] = {support["joint"]: {} for support in supports}
 
     for result_name in result_names:
         result_type = select_results_output(model, str(result_name))
         for support in supports:
             joint_name = support["joint"]
-            reaction = parse_joint_react_first_row(call_joint_react(model, joint_name), joint_name)
-            reactions[joint_name][str(result_name)] = {
-                "type": result_type,
-                "step_type": reaction["step_type"],
-                "step_num": reaction["step_num"],
-                "f1": reaction["f1"],
-                "f2": reaction["f2"],
-                "f3": reaction["f3"],
-                "m1": reaction["m1"],
-                "m2": reaction["m2"],
-                "m3": reaction["m3"],
-            }
+            reaction_rows = parse_joint_react_rows(call_joint_react(model, joint_name), joint_name)
+            for row in reaction_rows:
+                row["requested_result"] = str(result_name)
+                row["result_type"] = result_type
+            reactions[joint_name][str(result_name)] = reaction_rows
 
     return reactions
 
@@ -581,7 +604,7 @@ def parse_frame_force_rows(result: Any, frame_name: str) -> List[Dict[str, Any]]
         "m3": _to_list(m3),
     }
 
-    row_count = min(int(number_results or 0), *(len(values) for values in lists.values()))
+    row_count = _result_row_count(number_results, lists, f"Results.FrameForce({frame_name})")
 
     rows: List[Dict[str, Any]] = []
     for index in range(row_count):
@@ -691,7 +714,7 @@ def parse_joint_displ_rows(result: Any, point_name: str, absolute: bool = False)
         "r3": _to_list(r3),
     }
 
-    row_count = min(int(number_results or 0), *(len(values) for values in lists.values()))
+    row_count = _result_row_count(number_results, lists, f"Results.{method_name}({point_name})")
 
     rows: List[Dict[str, Any]] = []
     for index in range(row_count):
@@ -797,7 +820,7 @@ def parse_base_react_rows(result: Any) -> List[Dict[str, Any]]:
         "mz": _to_list(mz),
     }
 
-    row_count = min(int(number_results or 0), *(len(values) for values in lists.values()))
+    row_count = _result_row_count(number_results, lists, "Results.BaseReact")
 
     rows: List[Dict[str, Any]] = []
     for index in range(row_count):
@@ -878,7 +901,7 @@ def parse_modal_period_rows(result: Any) -> List[Dict[str, Any]]:
         "eigenvalue": _to_list(eigenvalue),
     }
 
-    row_count = min(int(number_results or 0), *(len(values) for values in lists.values()))
+    row_count = _result_row_count(number_results, lists, "Results.ModalPeriod")
 
     rows: List[Dict[str, Any]] = []
     for index in range(row_count):

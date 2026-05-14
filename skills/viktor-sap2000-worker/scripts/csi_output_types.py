@@ -34,7 +34,12 @@ class SupportNodeOut(TypedDict):
 
 
 class JointReactionOut(TypedDict):
-    type: Annotated[Literal["case", "combo"], "Selected output type"]
+    joint: Annotated[str, "SAP2000 point object name requested"]
+    object: Annotated[str, "CSI object name returned by result call"]
+    element: Annotated[str, "CSI element name returned by result call"]
+    requested_result: Annotated[str, "Requested case or combination name"]
+    result_type: Annotated[Literal["case", "combo"], "Selected output type"]
+    load_case: Annotated[str, "Result load case returned by CSI"]
     step_type: Annotated[str, "CSI step type"]
     step_num: Annotated[float, "CSI step number"]
     f1: Annotated[float, "Reaction force in 1 direction"]
@@ -141,8 +146,8 @@ class WorkerOkOutput(TypedDict):
     support_nodes: NotRequired[Annotated[list[SupportNodeOut], "Restrained support points"]]
     joint_reactions: NotRequired[
         Annotated[
-            dict[str, dict[str, JointReactionOut]],
-            "Joint reactions keyed by joint name and requested result name",
+            dict[str, dict[str, list[JointReactionOut]]],
+            "Joint reactions keyed by joint name and requested result name; each leaf preserves all CSI result rows",
         ]
     ]
     joint_displacements: NotRequired[Annotated[list[JointDisplacementOut], "Joint displacement rows"]]

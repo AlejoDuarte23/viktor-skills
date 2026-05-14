@@ -21,6 +21,7 @@ Do not automate SAP2000 directly from VIKTOR controller code. The controller sta
 - Check CSI return codes.
 - Parse CSI tuple/list outputs defensively because return order and compact return shapes can differ across wrappers and versions.
 - Ground every direct `comtypes` call with its input arguments, accepted raw output shapes, and normalized helper output.
+- Preserve multi-row CSI results as lists and validate result-array lengths against `NumberResults`; never collapse reactions or time-step results to the first row.
 - Close SAP2000 only when the worker launched it.
 - Mock worker execution in tests; manually test SAP2000 on the Windows worker.
 

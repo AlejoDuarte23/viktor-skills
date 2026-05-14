@@ -302,17 +302,24 @@ Recommended output:
   ],
   "joint_reactions": {
     "1": {
-      "ULS1": {
-        "type": "combo",
-        "step_type": "",
-        "step_num": 0.0,
-        "f1": 12.3,
-        "f2": 0.0,
-        "f3": -225.0,
-        "m1": 0.0,
-        "m2": 4.5,
-        "m3": 0.0
-      }
+      "ULS1": [
+        {
+          "joint": "1",
+          "object": "1",
+          "element": "1",
+          "requested_result": "ULS1",
+          "result_type": "combo",
+          "load_case": "ULS1",
+          "step_type": "",
+          "step_num": 0.0,
+          "f1": 12.3,
+          "f2": 0.0,
+          "f3": -225.0,
+          "m1": 0.0,
+          "m2": 4.5,
+          "m3": 0.0
+        }
+      ]
     }
   },
   "joint_displacements": [],
@@ -390,7 +397,7 @@ The controller should request outputs through `inputs.json`. The worker decides 
 8. Write one `output.json`.
 9. Include `status`, `units`, and `warnings`.
 
-Do not silently drop multi-row results. Frame forces and displacements can return many rows per object, station, step, or output case. Store them as lists.
+Do not silently drop multi-row results. Joint reactions, frame forces, displacements, base reactions, and modal periods can return many rows per object, station, step, or output case. Store them as lists.
 
 ### Comtypes Method Contracts
 
@@ -402,7 +409,7 @@ Ground every direct CSI call in a small input/output contract. With `comtypes`, 
 | `get_point_coords(...)` | `SapModel.PointObj.GetCoordCartesian(point_name, 0, 0, 0)` | `[x, y, z]`, `[x, y, z, ret]`, `[ret, x, y, z]` | `(float(x), float(y), float(z))` |
 | `get_point_restraint(...)` | `SapModel.PointObj.GetRestraint(point_name, [0, 0, 0, 0, 0, 0])`, fallback `GetRestraint(point_name)` | `[u1, u2, u3, r1, r2, r3]`, `[u1, u2, u3, r1, r2, r3, ret]`, `[ret, u1, u2, u3, r1, r2, r3]`, `([u1, u2, u3, r1, r2, r3], ret)` | `list[int]` with six restraint flags |
 | `get_frame_points(...)` | `SapModel.FrameObj.GetPoints(frame_name, "", "")` | `[point_i, point_j]`, `[point_i, point_j, ret]`, `[ret, point_i, point_j]` | `(str(point_i), str(point_j))` |
-| `call_joint_react(...)` | `SapModel.Results.JointReact(joint_name, 0, 0, [], [], [], [], [], [], [], [], [], [], [])`, fallback `JointReact(joint_name, 0)` | `[NumberResults, Obj, Elm, LoadCase, StepType, StepNum, F1, F2, F3, M1, M2, M3]`, plus `ret` first or last | first result row as a dict with `f1`, `f2`, `f3`, `m1`, `m2`, `m3` |
+| `call_joint_react(...)` | `SapModel.Results.JointReact(joint_name, 0, 0, [], [], [], [], [], [], [], [], [], [], [])`, fallback `JointReact(joint_name, 0)` | `[NumberResults, Obj, Elm, LoadCase, StepType, StepNum, F1, F2, F3, M1, M2, M3]`, plus `ret` first or last | one row dict per reaction result with `f1`, `f2`, `f3`, `m1`, `m2`, `m3` |
 | `call_joint_displ(...)` | `SapModel.Results.JointDispl(point_name, 0, 0, [], [], [], [], [], [], [], [], [], [], [])`, fallback `JointDispl(point_name, 0)` | `[NumberResults, Obj, Elm, LoadCase, StepType, StepNum, U1, U2, U3, R1, R2, R3]`, plus `ret` first or last | one row dict per result with `u1`, `u2`, `u3`, `r1`, `r2`, `r3` |
 | `call_frame_force(...)` | `SapModel.Results.FrameForce(frame_name, 0, 0, [], [], [], [], [], [], [], [], [], [], [], [], [])`, fallback `FrameForce(frame_name, 0)` | `[NumberResults, Obj, ObjSta, Elm, ElmSta, LoadCase, StepType, StepNum, P, V2, V3, T, M2, M3]`, plus `ret` first or last | one row dict per station with `p`, `v2`, `v3`, `t`, `m2`, `m3` |
 | `call_base_react(...)` | `SapModel.Results.BaseReact(0, [], [], [], [], [], [], [], [], [], 0.0, 0.0, 0.0)`, fallback `BaseReact()` | `[NumberResults, LoadCase, StepType, StepNum, FX, FY, FZ, MX, MY, MZ, GX, GY, GZ]`, plus `ret` first or last | one row dict per result with base reactions and global point |
@@ -416,6 +423,7 @@ Rules for adding a new CSI method:
 2. Capture at least one raw return from the target worker machine.
 3. Add a parser fixture for that raw return shape.
 4. Normalize to JSON-safe values before returning from the worker.
+5. Validate result-array lengths against `NumberResults`; do not truncate arrays with `min(...)`.
 
 ## Database Table Export Tool
 

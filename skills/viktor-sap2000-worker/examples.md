@@ -52,7 +52,7 @@ def build_worker_payload(params):
         "run_analysis": bool(params.run_analysis),
         "result_names": [name.strip() for name in params.result_names.split(",") if name.strip()],
         "extract": {
-            "support_coordinates": True,
+            "support_nodes": True,
             "joint_reactions": True,
         },
         "units": {
@@ -76,8 +76,8 @@ def parse_sap2000_output(result_file):
         message = output.get("message") or "SAP2000 analysis failed."
         raise vkt.UserError(message)
 
-    if "support_coordinates" not in output:
-        raise vkt.UserError("SAP2000 output is missing support_coordinates.")
+    if "support_nodes" not in output:
+        raise vkt.UserError("SAP2000 output is missing support_nodes.")
     if "joint_reactions" not in output:
         raise vkt.UserError("SAP2000 output is missing joint_reactions.")
 
@@ -125,25 +125,32 @@ class Controller(vkt.Controller):
 
         rows = []
         for joint_name, result_map in reactions.items():
-            for result_name, reaction in result_map.items():
-                rows.append([
-                    joint_name,
-                    result_name,
-                    reaction.get("type", ""),
-                    round(float(reaction.get("f1", 0.0)), 2),
-                    round(float(reaction.get("f2", 0.0)), 2),
-                    round(float(reaction.get("f3", 0.0)), 2),
-                    round(float(reaction.get("m1", 0.0)), 2),
-                    round(float(reaction.get("m2", 0.0)), 2),
-                    round(float(reaction.get("m3", 0.0)), 2),
-                ])
+            for result_name, reaction_rows in result_map.items():
+                for reaction in reaction_rows:
+                    rows.append([
+                        joint_name,
+                        result_name,
+                        reaction.get("result_type", ""),
+                        reaction.get("load_case", ""),
+                        reaction.get("step_type", ""),
+                        round(float(reaction.get("step_num", 0.0)), 2),
+                        round(float(reaction.get("f1", 0.0)), 2),
+                        round(float(reaction.get("f2", 0.0)), 2),
+                        round(float(reaction.get("f3", 0.0)), 2),
+                        round(float(reaction.get("m1", 0.0)), 2),
+                        round(float(reaction.get("m2", 0.0)), 2),
+                        round(float(reaction.get("m3", 0.0)), 2),
+                    ])
 
         return vkt.TableResult(
             rows,
             column_headers=[
                 "Joint",
                 "Case/Combo",
-                "Type",
+                "Result type",
+                "CSI load case",
+                "Step type",
+                "Step num",
                 "F1 [kN]",
                 "F2 [kN]",
                 "F3 [kN]",
@@ -226,7 +233,7 @@ def main():
         write_output({
             "status": "ok",
             "units": payload.get("units", {}),
-            "support_coordinates": supports,
+            "support_nodes": supports,
             "joint_reactions": reactions,
             "warnings": [],
         })
@@ -310,7 +317,7 @@ Example `inputs.json` for active-instance extraction:
   "run_analysis": false,
   "result_names": ["DEAD", "ULS1"],
   "extract": {
-    "support_coordinates": true,
+    "support_nodes": true,
     "joint_reactions": true
   },
   "units": {
@@ -346,20 +353,27 @@ class TestController(unittest.TestCase):
                 json.dumps({
                     "status": "ok",
                     "units": {"length": "m", "force": "kN", "moment": "kN m"},
-                    "support_coordinates": [],
+                    "support_nodes": [],
                     "joint_reactions": {
                         "1": {
-                            "ULS1": {
-                                "type": "combo",
-                                "step_type": "",
-                                "step_num": 0.0,
-                                "f1": 1.0,
-                                "f2": 2.0,
-                                "f3": -3.0,
-                                "m1": 0.0,
-                                "m2": 0.0,
-                                "m3": 0.0,
-                            }
+                            "ULS1": [
+                                {
+                                    "joint": "1",
+                                    "object": "1",
+                                    "element": "1",
+                                    "requested_result": "ULS1",
+                                    "result_type": "combo",
+                                    "load_case": "ULS1",
+                                    "step_type": "",
+                                    "step_num": 0.0,
+                                    "f1": 1.0,
+                                    "f2": 2.0,
+                                    "f3": -3.0,
+                                    "m1": 0.0,
+                                    "m2": 0.0,
+                                    "m3": 0.0,
+                                }
+                            ]
                         }
                     },
                     "warnings": [],
@@ -386,6 +400,7 @@ Keep COM return parsing testable without SAP2000.
 import unittest
 
 from csi_comtypes_helpers import (
+    parse_joint_react_rows,
     parse_name_list_result,
     parse_point_coords_result,
     parse_restraint_result,
@@ -393,6 +408,22 @@ from csi_comtypes_helpers import (
 
 
 class TestComReturnParsing(unittest.TestCase):
+
+    def _joint_react_fields(self):
+        return [
+            2,
+            ["1", "1"],
+            ["1", "1"],
+            ["ULS1", "ULS1"],
+            ["Max", "Min"],
+            [0.0, 1.0],
+            [10.0, -8.0],
+            [0.0, 0.0],
+            [-120.0, -95.0],
+            [0.0, 0.0],
+            [5.0, -4.0],
+            [0.0, 0.0],
+        ]
 
     def test_name_list_parser_accepts_common_order(self):
         names, ret = parse_name_list_result((2, ["ULS1", "ULS2"], 0), "RespCombo.GetNameList")
@@ -420,4 +451,32 @@ class TestComReturnParsing(unittest.TestCase):
     def test_restraint_parser_accepts_flat_list_without_ret(self):
         restraint = parse_restraint_result([1, 1, 1, 0, 0, 0], "3")
         self.assertEqual(restraint, [1, 1, 1, 0, 0, 0])
+
+    def test_joint_react_parser_accepts_no_ret_code(self):
+        rows = parse_joint_react_rows(self._joint_react_fields(), "1")
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["step_type"], "Max")
+        self.assertEqual(rows[1]["f1"], -8.0)
+
+    def test_joint_react_parser_accepts_ret_last(self):
+        rows = parse_joint_react_rows([*self._joint_react_fields(), 0], "1")
+        self.assertEqual(len(rows), 2)
+
+    def test_joint_react_parser_accepts_ret_first(self):
+        rows = parse_joint_react_rows([0, *self._joint_react_fields()], "1")
+        self.assertEqual(len(rows), 2)
+
+    def test_joint_react_parser_accepts_extra_wrapper_value(self):
+        rows = parse_joint_react_rows(["wrapper", *self._joint_react_fields(), 0], "1")
+        self.assertEqual(len(rows), 2)
+
+    def test_joint_react_parser_accepts_zero_rows(self):
+        rows = parse_joint_react_rows([0, [], [], [], [], [], [], [], [], [], [], []], "1")
+        self.assertEqual(rows, [])
+
+    def test_joint_react_parser_rejects_inconsistent_lengths(self):
+        fields = self._joint_react_fields()
+        fields[1] = ["1"]
+        with self.assertRaises(RuntimeError):
+            parse_joint_react_rows(fields, "1")
 ```
