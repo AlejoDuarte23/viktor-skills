@@ -24,6 +24,7 @@ Use this skill as the entry point for VIKTOR app work.
 - `../viktor-upload-excel/SKILL.md`: Excel upload and parsing with `FileField`, pandas, and openpyxl.
 - `../viktor-aec-data-model/SKILL.md`: Autodesk ACC file selection and AEC Data Model GraphQL queries.
 - `../viktor-staad-pro-worker/SKILL.md`: STAAD.Pro automation through a VIKTOR worker and `PythonAnalysis`.
+- `../viktor-scia-worker/SKILL.md`: SCIA Engineer model creation and analysis through the VIKTOR SCIA worker, `vkt.scia.Model`, `SciaAnalysis`, supported part methods, `.esa` templates, result parsing, and SCIA tests.
 - `../viktor-etabs-worker/SKILL.md`: ETABS automation through a VIKTOR worker and `ETABSAnalysis`.
 - `../viktor-sap2000-worker/SKILL.md`: SAP2000 automation through a VIKTOR worker, `SAP2000Analysis`, and CSI OAPI with `comtypes`.
 - `../viktor-rest-api/SKILL.md`: VIKTOR REST API calls for platform-level resources such as workspaces.
