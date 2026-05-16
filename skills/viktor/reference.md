@@ -20,6 +20,7 @@ Then add specialized skills only when the task needs them.
 | Generate downloadable Word reports from Markdown | `viktor-reporting-pandoc`, `viktor-file-management`, `viktor-cli-config` |
 | Query Autodesk ACC model data | `viktor-aec-data-model` |
 | Run STAAD.Pro outside the VIKTOR cloud runtime | `viktor-staad-pro-worker` |
+| Create and run a SCIA Engineer model through the VIKTOR SCIA worker | `viktor-scia-worker` |
 | Run ETABS outside the VIKTOR cloud runtime | `viktor-etabs-worker` |
 | Run SAP2000 outside the VIKTOR cloud runtime | `viktor-sap2000-worker` |
 | Call VIKTOR platform REST endpoints | `viktor-rest-api` |

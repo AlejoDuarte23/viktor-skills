@@ -49,6 +49,19 @@ Load:
 - `viktor-table-data-view`
 - `viktor-geometry-view` if model visualization is required
 
+## SCIA Worker App
+
+Request: "Create a SCIA Engineer model from a VIKTOR app and show reactions."
+
+Load:
+
+- `viktor-core`
+- `viktor-parametrization`
+- `viktor-styling`
+- `viktor-scia-worker`
+- `viktor-table-data-view`
+- `viktor-geometry-view` if model preview is required
+
 ## ETABS Worker App
 
 Request: "Run ETABS from a VIKTOR app and show base reactions."
