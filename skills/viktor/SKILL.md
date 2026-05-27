@@ -33,7 +33,7 @@ Use this skill as the entry point for VIKTOR app work.
 - `../viktor-testing/SKILL.md`: VIKTOR automated tests, `viktor-cli test`, local controller/view tests, `viktor.testing` mocks, and external worker/service mocks.
 - `../viktor-file-management/SKILL.md`: VIKTOR file upload and download patterns beyond Excel parsing.
 - `../viktor-reporting-pandoc/SKILL.md`: Word DOCX reports generated from Markdown with Pandoc and exposed through `DownloadButton`.
-- `../viktor-llm/SKILL.md`: VIKTOR built-in LLM, tool use, vision, and LLM chat inputs.
+- `../viktor-llm/SKILL.md`: VIKTOR built-in LLM router; then load `../viktor-llm/text-base-llm/SKILL.md` for text chat, tools, or Agents SDK, and `../viktor-llm/vision-llm/SKILL.md` for image analysis.
 - `../viktor-webview/SKILL.md`: custom HTML, CSS, JavaScript, interactive dashboards, and browser-to-VIKTOR parameter updates.
 - `../viktor-webview-mathjax/SKILL.md`: MathJax equation rendering inside sandboxed VIKTOR WebView HTML templates.
 

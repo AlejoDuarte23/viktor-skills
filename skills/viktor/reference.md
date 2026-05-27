@@ -27,7 +27,8 @@ Then add specialized skills only when the task needs them.
 | Use the VIKTOR Python SDK API | `viktor-sdk-api` |
 | Configure, install, or run a VIKTOR app locally | `viktor-cli-config` |
 | Add, fix, run, or mock automated tests | `viktor-testing`, usually with `viktor-core` and `viktor-cli-config` |
-| Add built-in VIKTOR LLM features | `viktor-llm` |
+| Add built-in VIKTOR text LLM chat, tools, or Agents SDK | `viktor-llm`, then `viktor-llm/text-base-llm` |
+| Add built-in VIKTOR vision LLM image analysis | `viktor-llm`, then `viktor-llm/vision-llm` |
 | Build custom interactive HTML output | `viktor-webview` |
 | Render LaTeX equations in WebView HTML | `viktor-webview`, `viktor-webview-mathjax` |
 

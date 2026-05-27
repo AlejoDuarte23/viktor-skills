@@ -131,7 +131,7 @@ Load:
 
 ## Built-In LLM App
 
-Request: "Add VIKTOR's built-in LLM with tool use and image input."
+Request: "Add VIKTOR's built-in LLM with Agents SDK tool use and image input."
 
 Load:
 
@@ -139,6 +139,8 @@ Load:
 - `viktor-parametrization`
 - `viktor-styling`
 - `viktor-llm`
+- `viktor-llm/text-base-llm`
+- `viktor-llm/vision-llm`
 
 ## Interactive WebView App
 

@@ -5,8 +5,7 @@ Agent skills for building VIKTOR apps.
 Each skill lives in `skills/<skill-name>/` and contains:
 
 - `SKILL.md`
-- `reference.md`
-- `examples.md`
+- optional supporting files such as `reference.md`, `examples.md`, or nested subskills
 
 ## Quick Install
 
