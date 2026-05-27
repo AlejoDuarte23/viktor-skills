@@ -1,6 +1,6 @@
 ---
 name: viktor-llm-vision-llm
-description: Use for VIKTOR built-in vision LLM work: image upload fields, base64 data URI inputs, MIME type handling, the `mistral.ministral-3-14b-instruct` vision model, and image-analysis outputs without external API keys.
+description: "Use for VIKTOR built-in vision LLM work: image upload fields, base64 data URI inputs, MIME type handling, the `mistral.ministral-3-14b-instruct` vision model, and image-analysis outputs without external API keys."
 ---
 
 # VIKTOR Vision LLM

@@ -1,6 +1,6 @@
 ---
 name: viktor-llm
-description: Use when the user wants to add, fix, or review VIKTOR built-in LLM features. This is a router skill with two subskills in subfolders: `text-base-llm` for text chat, tool use, and Agents SDK orchestration, and `vision-llm` for image analysis with the built-in vision model.
+description: "Use when the user wants to add, fix, or review VIKTOR built-in LLM features. This is a router skill with two subskills in subfolders: `text-base-llm` for text chat, tool use, and Agents SDK orchestration, and `vision-llm` for image analysis with the built-in vision model."
 ---
 
 # VIKTOR LLM

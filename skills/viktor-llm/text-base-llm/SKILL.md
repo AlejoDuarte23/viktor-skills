@@ -1,6 +1,6 @@
 ---
 name: viktor-llm-text-base-llm
-description: Use for text-based VIKTOR built-in LLM work: `vkt.Chat`, `vkt.ChatResult`, text model defaults, Chat Completions, Responses API tool use, OpenAI Agents SDK with `Runner.run_sync`, and model-visible JSON tool errors.
+description: "Use for text-based VIKTOR built-in LLM work: `vkt.Chat`, `vkt.ChatResult`, text model defaults, Chat Completions, Responses API tool use, OpenAI Agents SDK with `Runner.run_sync`, and model-visible JSON tool errors."
 ---
 
 # VIKTOR Text-Based LLM
