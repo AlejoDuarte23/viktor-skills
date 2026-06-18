@@ -21,6 +21,7 @@ Use this skill as the entry point for VIKTOR app work.
 
 - `../viktor-geometry-view/SKILL.md`: 3D geometry output, materials, grouping, deformed shape views.
 - `../viktor-table-data-view/SKILL.md`: tabular results, summary panels, `TableView`, `DataView`.
+- `../viktor-storage/SKILL.md`: persistent `vkt.Storage`, storage scopes, cross-entity stored results, and `vkt.memoize` caching.
 - `../viktor-upload-excel/SKILL.md`: Excel upload and parsing with `FileField`, pandas, and openpyxl.
 - `../viktor-aec-data-model/SKILL.md`: Autodesk ACC file selection and AEC Data Model GraphQL queries.
 - `../viktor-staad-pro-worker/SKILL.md`: STAAD.Pro automation through a VIKTOR worker and `PythonAnalysis`.
