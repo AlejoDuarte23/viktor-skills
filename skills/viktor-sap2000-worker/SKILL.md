@@ -1,13 +1,13 @@
 ---
 name: viktor-sap2000-worker
-description: Use when a VIKTOR app needs SAP2000 automation through a Windows VIKTOR worker using CSI OAPI with comtypes. Covers SAP2000Analysis worker orchestration, JSON input/output contracts, attach or launch flows, reusable comtypes helper functions, DatabaseTables exports, and examples for retrieving main SAP2000 results or creating/opening models.
+description: Maintain or implement an explicitly requested SAP2000 worker-side Python script using SAP2000Analysis, file handoff, and comtypes. For new direct SAP2000 API sessions, use the SAP2000 Connect skill.
 ---
 
 # VIKTOR SAP2000 Worker
 
-Use this skill when a VIKTOR app needs SAP2000 automation through a VIKTOR worker.
+Use this skill for existing or explicitly requested SAP2000 worker-side Python scripts. For new direct API work, prefer `../viktor-sap2000-connect/SKILL.md`.
 
-Do not automate SAP2000 directly from VIKTOR controller code. The controller starts the worker job, sends files, and reads outputs. The worker script uses `comtypes` to attach to or launch SAP2000.
+For the script-based approach, the controller starts the worker job, sends files, and reads outputs. The worker script uses `comtypes` to attach to or launch SAP2000.
 
 ## Core Rules
 

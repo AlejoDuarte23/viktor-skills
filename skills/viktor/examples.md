@@ -62,9 +62,9 @@ Load:
 - `viktor-table-data-view`
 - `viktor-geometry-view` if model preview is required
 
-## ETABS Worker App
+## ETABS Script Worker App
 
-Request: "Run ETABS from a VIKTOR app and show base reactions."
+Request: "Maintain my ETABSAnalysis worker script and show base reactions."
 
 Load:
 
@@ -75,9 +75,9 @@ Load:
 - `viktor-table-data-view`
 - `viktor-geometry-view` if model preview is required
 
-## SAP2000 Worker App
+## SAP2000 Script Worker App
 
-Request: "Run SAP2000 from a VIKTOR app and extract support reactions."
+Request: "Maintain my SAP2000Analysis worker script and extract support reactions."
 
 Load:
 
@@ -87,6 +87,39 @@ Load:
 - `viktor-sap2000-worker`
 - `viktor-table-data-view`
 - `viktor-geometry-view` if model preview is required
+
+## ETABS Connect App
+
+Request: "Build an ETABS model from my VIKTOR controller with `vkt.etabs.connect()`."
+
+Load:
+
+- `viktor-core`
+- `viktor-parametrization`
+- `viktor-styling`
+- `viktor-etabs-connect`
+
+## SAP2000 Connect App
+
+Request: "Read the SAP2000 model I have open using `vkt.sap2000.attach()`."
+
+Load:
+
+- `viktor-core`
+- `viktor-parametrization`
+- `viktor-styling`
+- `viktor-sap2000-connect`
+
+## AutoCAD Connect App
+
+Request: "Draw footing and rebar details in my open AutoCAD drawing."
+
+Load:
+
+- `viktor-core`
+- `viktor-parametrization`
+- `viktor-styling`
+- `viktor-autocad-connect`
 
 ## REST Or SDK Automation
 
@@ -150,6 +183,20 @@ Load:
 - `viktor-parametrization`
 - `viktor-styling`
 - `viktor-webview`
+- `interactive-viktor-webview`
+
+## Three.js Model With Native Inputs
+
+Request: "Put the base plate dimensions in a panel to the right of the Three.js model. Keep the load table in VIKTOR and show the results in a DataView."
+
+Load:
+
+- `viktor-core`
+- `viktor-parametrization`
+- `viktor-styling`
+- `threejs-dynamic-ui`
+- `interactive-viktor-webview`
+- `viktor-table-data-view`
 
 ## WebView Equation Report
 

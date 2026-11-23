@@ -220,7 +220,7 @@ Memoize rules:
 - In local development, the cache is local and limited to 50 calls with first-in, first-out cleanup.
 - In production, the memoize cache is not limited by the same 50-call development cap.
 
-Use `vkt.Storage` instead of `memoize` when results must be explicitly retrieved by key, shared between different jobs, persisted indefinitely, listed, deleted, or inspected.
+Use `vkt.Storage` when results must be retrieved by key, retained beyond the cache lifetime, listed, deleted, or inspected. Both mechanisms can reuse work across jobs. Read [long-running-results.md](long-running-results.md) for choosing between them and connecting the result to params or a view.
 
 ## Testing
 

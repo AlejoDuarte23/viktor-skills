@@ -8,7 +8,7 @@ Use `create-app` when the platform app and local starter files do not exist yet.
 viktor-cli create-app "Bearing Pressure Check" --init --registered-name bearing-pressure-check --app-type simple
 ```
 
-Expected config:
+Check the registered name returned by the CLI. The following config assumes that the name was not changed to resolve a collision:
 
 ```toml
 app_type = "simple"
@@ -51,14 +51,14 @@ viktor-cli install
 viktor-cli start
 ```
 
-For the first launch, `clean-start` can replace `install` plus `start`:
+For a confirmed new, empty development workspace, `clean-start` can replace `install` plus `start`. It clears workspace entities and entity types; ask before clearing existing or unknown data:
 
 ```bash
 viktor-cli create-app "Bearing Pressure Check" --registered-name bearing-pressure-check
 viktor-cli clean-start
 ```
 
-After `clean-start` succeeds, report the URL printed by the CLI so the user can open the app in the browser. Do not run `viktor-cli start` before the platform app exists; if the CLI says `app with registered-name=<name> does not exist`, run `create-app` with that registered name first.
+After `start` or `clean-start` succeeds, report the URL printed by the CLI so the user can open the app. If the app does not exist, create it when authorized and check the registered name returned by the CLI.
 
 ## Minimal `viktor.config.toml`
 
@@ -128,7 +128,8 @@ Run the same command after adding any new Python dependency.
 ```bash
 viktor-cli configure
 viktor-cli check-system
-viktor-cli clean-start
+viktor-cli install
+viktor-cli start
 ```
 
 Use the Linux CLI inside WSL2.
@@ -138,7 +139,8 @@ Use the Linux CLI inside WSL2.
 ```bash
 viktor-cli configure
 viktor-cli check-system --docker
-viktor-cli clean-start
+viktor-cli install
+viktor-cli start
 ```
 
 ## Daily Development Loop
@@ -147,13 +149,15 @@ viktor-cli clean-start
 viktor-cli start
 ```
 
-In a second terminal:
+Keep this terminal running and read its output while the app is used. In a second terminal:
 
 ```bash
 viktor-cli test
 viktor-cli run -- python -m unittest discover -s tests
 viktor-cli run -- python --version
 ```
+
+For an agent, start the app in a persistent terminal session and retain the session identifier. Wait for the connection message and URL, then give the URL to the user. Reproduce the relevant action or ask the user to do it, and read new output from that same session. If the process exits or the session cannot remain available, report that instead of claiming that the app is still running.
 
 ## Start Against a Specific Registered App
 
@@ -190,7 +194,7 @@ viktor-cli run -e MODE=development -- python -m unittest discover -s tests
 4. Run `viktor-cli install` if `requirements.txt` changed.
 5. Run tests.
 6. Exclude development-only files with `.viktorignore`.
-7. Publish.
+7. Ask for publication approval unless the user already authorized it, then publish.
 
 When the config has the right `registered_name`:
 

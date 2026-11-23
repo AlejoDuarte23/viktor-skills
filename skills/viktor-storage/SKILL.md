@@ -1,6 +1,6 @@
 ---
 name: viktor-storage
-description: Use when a VIKTOR app needs to store, retrieve, list, delete, or cache results between jobs with `vkt.Storage`, choose entity/workspace/session scopes, access storage from another entity, persist intermediate results, compare persistent storage with `vkt.memoize`, handle `vkt.File` payloads, or test storage code with `mock_Storage`.
+description: Cache slow VIKTOR calculations with memoize or store results across jobs with vkt.Storage. Use for storage scopes, files, cross-entity access, or filling fields and WebViews from stored results.
 ---
 
 # VIKTOR Storage
@@ -23,10 +23,11 @@ Use this skill when a VIKTOR app needs results or intermediate files to survive 
 ## Related Skills
 
 - Load `../viktor-testing/SKILL.md` when adding or fixing tests for storage-backed code.
-- Load `../viktor-agentic-workflows/storage-tool/SKILL.md` only for agentic workflow handoffs, graph state, optimization studies, or storage-controlled WebViews.
+- Load `../storage-tool/SKILL.md` only for agentic workflow handoffs, graph state, optimization studies, or storage-controlled WebViews.
 - Load `../viktor-sdk-api/SKILL.md` when cross-entity storage access requires resolving a target entity through `vkt.api_v1.API`.
 
 ## Load When Needed
 
 - Read [reference.md](reference.md) for storage operations, scope selection, JSON helpers, cross-entity access, memoize rules, and testing notes.
+- Read [long-running-results.md](long-running-results.md) to choose a cache or storage pattern, fill params from a stored run, and reuse results in views and WebViews.
 - Read [examples.md](examples.md) for compact copyable storage, visibility, and test snippets.

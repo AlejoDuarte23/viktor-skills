@@ -26,4 +26,7 @@ Use this skill when a VIKTOR result needs browser-native HTML instead of a stand
 
 - Read [reference.md](reference.md) for API signatures, source notes, asset handling, communication rules, and security caveats.
 - Read [examples.md](examples.md) for practical static, dynamic, Plotly, canvas, table-update, and test patterns.
+- Load [Three.js Dynamic UI](../threejs-dynamic-ui/SKILL.md) for custom 3D views with OrbitControls and VIKTOR geometry data.
+- Load [Interactive VIKTOR WebView](../interactive-viktor-webview/SKILL.md) for edits that must update VIKTOR inputs.
+- Read `../viktor-storage/long-running-results.md` when a WebView displays stored analysis results or uses a small param to select a stored run.
 - Load `../viktor-webview-mathjax/SKILL.md` for sandbox-safe MathJax equation templates.

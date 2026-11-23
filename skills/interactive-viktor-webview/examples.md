@@ -114,6 +114,7 @@ Save as `templates/load_editor.html`.
 <head>
   <meta charset="utf-8">
   <title>Load Editor</title>
+  <script src="VIKTOR_JS_SDK"></script>
   <style>
     body { font-family: sans-serif; padding: 20px; background: #f7f8fa; color: #18212b; }
     h2 { margin-top: 0; }
@@ -141,14 +142,13 @@ Save as `templates/load_editor.html`.
   </table>
 
   <p>
-    <button onclick="addLoad()">Add load case</button>
+    <button type="button" onclick="addLoad()">Add load case</button>
   </p>
 
-  <button class="primary" onclick="sendToViktor()">Save to VIKTOR</button>
-  <span class="status" id="status">No changes saved yet.</span>
+  <button type="button" class="primary" onclick="sendToViktor()">Apply to VIKTOR</button>
+  <span class="status" id="status" role="status">No changes applied yet.</span>
 
   {{ bootstrap_script }}
-  <script src="VIKTOR_JS_SDK"></script>
   <script>
     document.getElementById("span-display").textContent = initialSpan;
 
@@ -194,6 +194,7 @@ Save as `templates/load_editor.html`.
         magnitudeCell.appendChild(magnitudeInput);
 
         const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
         deleteButton.textContent = "Delete";
         deleteButton.onclick = () => {
           loadCases.splice(index, 1);
@@ -211,12 +212,14 @@ Save as `templates/load_editor.html`.
     }
 
     function sendToViktor() {
-      setStatus("Saving...");
-      viktorSdk.sendParams({
+      if (typeof window.viktorSdk?.sendParams !== "function") {
+        setStatus("Open this view in VIKTOR to apply the values.");
+        return;
+      }
+      window.viktorSdk.sendParams({
         load_cases_json: JSON.stringify(loadCases)
-      }, true)
-        .then(() => setStatus("Saved. Refresh dependent views to see updated results."))
-        .catch((error) => setStatus("Save failed: " + error));
+      }, true);
+      setStatus("Update requested. Check the VIKTOR editor.");
     }
 
     renderLoads();

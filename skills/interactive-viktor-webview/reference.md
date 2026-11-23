@@ -25,10 +25,10 @@ Python controller
 WebView iframe
   -> user edits values in the DOM
   -> JavaScript calls viktorSdk.sendParams(...)
-  -> save status is handled with Promise callbacks
+  -> VIKTOR receives an update request
 
 VIKTOR params
-  -> hidden TextField/TextAreaField receives serialized values
+  -> declared hidden fields receive serialized values
   -> Python reads and casts values on the next view refresh or compute call
 ```
 
@@ -38,6 +38,7 @@ Declare receiving fields in `Parametrization` before sending to them from JavaSc
 
 Use:
 
+- `IntegerField(visible=False)` or `NumberField(visible=False)` for typed numeric inputs such as plate dimensions.
 - `TextField(visible=False)` for one scalar string.
 - `TextAreaField(visible=False)` for JSON blobs or larger payloads.
 
@@ -45,7 +46,7 @@ If `viktorSdk.sendParams({field: value})` targets a field that does not exist in
 
 ## JavaScript SDK Loading
 
-Load the SDK in the HTML template:
+Load the SDK with a script tag in the HTML head so the bridge can receive the parent message during iframe setup.
 
 ```html
 <script src="VIKTOR_JS_SDK"></script>
@@ -65,14 +66,19 @@ html = html.replace("VIKTOR_JS_SDK", sdk_path)
 Use `viktorSdk.sendParams(values, bypassConfirmation)`.
 
 ```javascript
-viktorSdk.sendParams({
-  load_cases_json: JSON.stringify(loadCases)
-}, true)
-  .then(() => setStatus("Saved."))
-  .catch((error) => setStatus("Save failed: " + error));
+function applyLoads() {
+  if (typeof window.viktorSdk?.sendParams !== "function") {
+    setStatus("Open this view in VIKTOR to apply the values.");
+    return;
+  }
+  window.viktorSdk.sendParams({ load_cases_json: JSON.stringify(loadCases) });
+  setStatus("Update requested. Check the VIKTOR editor.");
+}
 ```
 
-Use `true` for immediate saves. Omit it or pass `false` when the user should confirm the param update.
+Pass `true` to skip confirmation and apply the values to the editor. Omit it or pass `false` when the user should confirm. Saved entity revisions follow the app's usual save behavior.
+
+Bind the function to a `type="button"` click. The V1 SDK sends the request to the parent and returns no completion value. If the SDK exists and nothing changes, check that it loads early, then check the payload paths and the editor values inside VIKTOR. [VIKTOR WebView guide](https://docs.viktor.ai/docs/create-apps/results-and-visualizations/html/)
 
 ## Field Path Syntax
 
@@ -123,6 +129,7 @@ Treat WebView HTML as sandboxed.
 
 - Do not depend on outbound browser requests for core behavior.
 - Avoid loading external scripts or stylesheets dynamically.
+- Use a button click to call the SDK. A sandboxed iframe can block normal HTML form submission.
 - Inline critical CSS and JavaScript, or load local/static assets according to the base VIKTOR WebView skill.
 - Do not interpolate untrusted user-provided HTML.
 - The documented browser-to-VIKTOR path is `viktorSdk.sendParams(...)`.
@@ -130,5 +137,6 @@ Treat WebView HTML as sandboxed.
 ## Related Patterns
 
 - Use `../viktor-webview/SKILL.md` for general WebView rendering, static HTML, dynamic HTML, Plotly-in-WebView, and WebView testing.
+- Use [Three.js Dynamic UI](../threejs-dynamic-ui/SKILL.md) for model rendering, orbit controls, and editing geometry in a side panel.
 - Use an agent-driven Storage visibility skill when a server-side agent tool should show or hide a panel.
 - Use native VIKTOR parametrization fields when the interaction can be expressed without custom HTML.

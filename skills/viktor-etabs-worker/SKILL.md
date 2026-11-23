@@ -1,6 +1,6 @@
 ---
 name: viktor-etabs-worker
-description: Use when the user wants a VIKTOR app to run ETABS through a VIKTOR worker on a Windows machine or server. VIKTOR cloud apps cannot directly automate local CSI desktop software, so this skill covers `vkt.etabs.ETABSAnalysis`, the inherited `PythonAnalysis` worker pattern, ETABS local execution assumptions, JSON input and output files, CSI OAPI automation with `comtypes`, launching or attaching to ETABS, result extraction, error handling, requirements, and testing.
+description: Maintain or implement an explicitly requested ETABS worker-side Python script using ETABSAnalysis, file handoff, and comtypes. For new direct ETABS API sessions, use the ETABS Connect skill.
 ---
 
 # VIKTOR ETABS Worker
@@ -10,6 +10,9 @@ Use this skill only when ETABS automation through a VIKTOR worker is required.
 Do not use this skill for STAAD.Pro. Use `../viktor-staad-pro-worker/SKILL.md` for STAAD/OpenSTAAD work. Use `../viktor-sap2000-worker/SKILL.md` for SAP2000-specific worker code.
 
 ## Workflow
+
+For new direct API work, prefer `../viktor-etabs-connect/SKILL.md`. Use this skill when maintaining or explicitly requesting a worker-side Python script.
+For migration of an existing script, read `../viktor-etabs-connect/migration.md` before changing its behavior.
 
 1. Load the VIKTOR core trio first: `../viktor-core/SKILL.md`, `../viktor-parametrization/SKILL.md`, and `../viktor-styling/SKILL.md`.
 2. Load `../viktor-geometry-view/SKILL.md` when the app previews the ETABS model geometry.

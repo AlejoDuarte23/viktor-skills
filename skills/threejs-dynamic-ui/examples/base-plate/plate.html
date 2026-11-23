@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="__VIKTOR_SDK__"></script>
+<title>Base plate study</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #172d3d;
+    --muted: #465e70;
+    --rule: #cad7e0;
+    --paper: #f6f9fb;
+    --blue: #145a74;
+    --grid: #e6eef4;
+    font: 14px/1.5 system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) clamp(132px, 31%, 220px); min-height: max(390px, 100dvh); }
+  .model-view { display: flex; flex-direction: column; min-width: 0; }
+  p { margin: 0; }
+  .plate-inputs { padding: 13px; border-left: 1px solid var(--rule); background: #fff; }
+  .plate-inputs h2 { margin: 0 0 13px; font-size: 14px; }
+  .dimension-fields { display: grid; gap: 10px; }
+  .dimension-fields label { display: grid; gap: 3px; font-size: 12px; font-weight: 650; }
+  .dimension-fields input { width: 100%; min-width: 0; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 4px; color: var(--ink); font: inherit; }
+  .dimension-fields input:invalid { border-color: #a9341f; }
+  #apply-dimensions { width: 100%; background: var(--blue); color: white; border-color: var(--blue); }
+  #apply-dimensions:disabled { opacity: .5; cursor: default; }
+  #dimension-status { min-height: 19px; margin-top: 3px; color: var(--muted); font-size: 12px; }
+  .toolbar, .caption { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 9px 13px; }
+  .toolbar { border-bottom: 1px solid var(--rule); }
+  .toolbar div { display: flex; flex-wrap: wrap; gap: 5px; }
+  button { font: inherit; color: var(--ink); cursor: pointer; background: #fff; padding: 6px 9px; border: 1px solid var(--rule); border-radius: 4px; font-weight: 650; }
+  button:hover, button[aria-pressed="true"] { background: #e2f0f5; border-color: #79a9bd; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .viewport { position: relative; min-height: 300px; flex: 1; overflow: hidden; background: var(--grid); }
+  #stage { position: absolute; inset: 0; }
+  canvas { display: block; touch-action: none; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  .axis, #dimensions { font: 600 11px/1.4 ui-monospace, monospace; letter-spacing: .055em; }
+  .axis { position: absolute; bottom: 12px; left: 15px; pointer-events: none; color: var(--blue); }
+  .caption { border-top: 1px solid var(--rule); color: var(--muted); font-size: 12px; }
+  #status { position: relative; margin: 12px; padding: 8px 12px; width: fit-content; background: var(--paper); border-radius: 4px; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<main aria-label="Base plate model">
+  <div class="model-view">
+    <div class="toolbar">
+      <div>
+        <button type="button" id="iso" aria-pressed="true">Isometric</button>
+        <button type="button" id="top" aria-pressed="false">Plan</button>
+      </div>
+      <button type="button" id="concrete" aria-pressed="true">Concrete</button>
+    </div>
+    <div class="viewport">
+      <div id="stage"></div>
+      <p class="axis">X / WIDTH &nbsp; Z / DEPTH</p>
+      <p id="status" role="status">Loading the 3D model…</p>
+    </div>
+    <div class="caption">
+      <p id="dimensions"></p>
+      <p id="anchor-position" aria-live="polite">Drag to orbit. Scroll to zoom. Click an anchor to see its position.</p>
+    </div>
+  </div>
+  <aside class="plate-inputs" aria-labelledby="dimension-heading">
+    <h2 id="dimension-heading">Plate dimensions</h2>
+    <div class="dimension-fields">
+      <label>Width (mm)<input id="plate_width_mm" type="number" min="180" max="650" step="1" required></label>
+      <label>Depth (mm)<input id="plate_depth_mm" type="number" min="180" max="650" step="1" required></label>
+      <label>Thickness (mm)<input id="plate_thickness_mm" type="number" min="8" max="75" step="1" required></label>
+      <button type="button" id="apply-dimensions" disabled>Apply to VIKTOR</button>
+    </div>
+    <p id="dimension-status" role="status"></p>
+  </aside>
+</main>
+<script type="application/json" id="plate-dimensions">__PLATE_DIMENSIONS__</script>
+<script type="module">
+const byId = (id) => document.getElementById(id);
+const savedDimensions = JSON.parse(byId("plate-dimensions").textContent);
+const dimensionInputs = ["plate_width_mm", "plate_depth_mm", "plate_thickness_mm"].map(byId);
+const apply = byId("apply-dimensions");
+const dimensionStatus = byId("dimension-status");
+const canApply = typeof window.viktorSdk?.sendParams === "function";
+let drawPlate;
+
+function previewDimensions() {
+  if (!dimensionInputs.every((input) => input.validity.valid)) return null;
+  return Object.fromEntries(dimensionInputs.map((input) => [input.id, input.valueAsNumber]));
+}
+
+for (const input of dimensionInputs) {
+  input.value = savedDimensions[input.id];
+  input.addEventListener("input", () => {
+    const draft = previewDimensions();
+    const changed = draft && dimensionInputs.some(({id}) => draft[id] !== savedDimensions[id]);
+    apply.disabled = !canApply || !changed;
+    if (draft) drawPlate?.(draft);
+    if (!draft) {
+      dimensionStatus.textContent = "Enter whole numbers within the allowed ranges.";
+    } else if (!canApply) {
+      dimensionStatus.textContent = "The VIKTOR connection is unavailable.";
+    } else {
+      dimensionStatus.textContent = changed ? "Apply to keep these dimensions in VIKTOR." : "";
+    }
+  });
+}
+
+apply.addEventListener("click", () => {
+  const draft = previewDimensions();
+  if (!draft || !canApply) return;
+  window.viktorSdk.sendParams(draft, true);
+  dimensionStatus.textContent = "Applying dimensions…";
+});
+
+function startModel(THREE, OrbitControls) {
+  const stage = byId("stage");
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color("#e6eef4");
+  const renderer = new THREE.WebGLRenderer({antialias: true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.domElement.setAttribute("aria-label", "Interactive base plate model");
+  stage.append(renderer.domElement);
+  const camera = new THREE.PerspectiveCamera(39, 1, 0.01, 20);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 0.05, 0);
+  controls.minDistance = 0.32;
+  controls.maxDistance = 4;
+  controls.addEventListener("change", () => {
+    byId("iso").setAttribute("aria-pressed", "false");
+    byId("top").setAttribute("aria-pressed", "false");
+    render();
+  });
+
+  scene.add(new THREE.HemisphereLight("#faffff", "#52626a", 2.4));
+  const sun = new THREE.DirectionalLight("#fff5e6", 2.7);
+  sun.position.set(2, 4, 3);
+  scene.add(sun);
+  const grid = new THREE.GridHelper(2.6, 26, "#a0b3c1", "#bfced8");
+  grid.position.y = -0.164;
+  scene.add(grid);
+  const model = new THREE.Group();
+  scene.add(model);
+  const steel = new THREE.MeshStandardMaterial({color: "#4e7e94", metalness: 0.28, roughness: 0.59});
+  const column = new THREE.MeshStandardMaterial({color: "#6c9aad", metalness: 0.25, roughness: 0.54});
+  const bolt = new THREE.MeshStandardMaterial({color: "#334d5e", roughness: 0.52});
+  const active = new THREE.MeshStandardMaterial({color: "#c85c22", emissive: "#4c1604", roughness: 0.48});
+  const foundation = new THREE.MeshStandardMaterial({color: "#a0aeb7", roughness: 0.94});
+  const grout = new THREE.MeshStandardMaterial({color: "#d1c7ac", roughness: 0.9});
+  const edges = new THREE.LineBasicMaterial({color: "#395365", transparent: true, opacity: 0.58});
+  const ray = new THREE.Raycaster();
+  const fittings = [];
+  const anchorPositions = {};
+  let concreteParts = [];
+  let selectedAnchor = null;
+
+  function render() { renderer.render(scene, camera); }
+
+  function part(geometry, material, x, y, z, outline = true) {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    if (outline) mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry), edges));
+    model.add(mesh);
+    return mesh;
+  }
+
+  function box(xSize, ySize, zSize, material, x, y, z) {
+    return part(new THREE.BoxGeometry(xSize, ySize, zSize), material, x, y, z);
+  }
+
+  function selectAnchor(anchorId) {
+    selectedAnchor = anchorId;
+    for (const mesh of fittings) mesh.material = mesh.userData.anchor === anchorId ? active : bolt;
+    const [x, z] = anchorPositions[anchorId];
+    byId("anchor-position").textContent = `${anchorId} · X ${x} mm · Z ${z} mm`;
+    render();
+  }
+
+  function draw(dimensions) {
+    const sizes = dimensionInputs.map(({id}) => dimensions[id]);
+    const [w, d, t] = sizes.map((value) => value / 1000);
+    model.traverse((object) => object.geometry?.dispose());
+    model.clear();
+    fittings.length = 0;
+    concreteParts = [
+      box(w + 0.10, 0.14, d + 0.10, foundation, 0, -0.092, 0),
+      box(w, 0.02, d, grout, 0, -0.010, 0),
+    ];
+    const showConcrete = byId("concrete").getAttribute("aria-pressed") === "true";
+    for (const part of concreteParts) part.visible = showConcrete;
+    box(w, t, d, steel, 0, t / 2, 0);
+    const columnHeight = 0.23;
+    box(0.011, columnHeight, 0.130, column, 0, t + columnHeight / 2, 0);
+    for (const z of [-0.071, 0.071]) box(0.128, columnHeight, 0.014, column, 0, t + columnHeight / 2, z);
+    const edgeX = w / 2 - 0.038;
+    const edgeZ = d / 2 - 0.038;
+    const positions = [[-edgeX, -edgeZ], [edgeX, -edgeZ], [edgeX, edgeZ], [-edgeX, edgeZ]];
+    positions.forEach(([anchorX, anchorZ], index) => {
+      const id = "A" + (index + 1);
+      anchorPositions[id] = [Math.round(anchorX * 1000), Math.round(anchorZ * 1000)];
+      for (const [radius, height, level, segments] of [[0.020, 0.005, 0.0025, 24], [0.014, 0.012, 0.011, 6], [0.008, 0.007, 0.020, 16]]) {
+        const mesh = part(new THREE.CylinderGeometry(radius, radius, height, segments), bolt, anchorX, t + level, anchorZ);
+        mesh.userData.anchor = id;
+        fittings.push(mesh);
+      }
+    });
+    byId("dimensions").textContent = sizes.join(" × ") + " mm";
+    if (selectedAnchor) selectAnchor(selectedAnchor);
+    else render();
+  }
+
+  function preset(plan) {
+    controls.target.set(0, 0.05, 0);
+    if (plan) camera.position.set(0, 1.3, 0.0001);
+    else camera.position.set(0.62, 0.52, 0.67);
+    controls.update();
+    byId("iso").setAttribute("aria-pressed", String(!plan));
+    byId("top").setAttribute("aria-pressed", String(plan));
+    render();
+  }
+
+  let down = null;
+  renderer.domElement.addEventListener("pointerdown", (event) => {
+    down = event.button === 0 ? [event.clientX, event.clientY] : null;
+  });
+  renderer.domElement.addEventListener("pointerup", (event) => {
+    if (!down || Math.hypot(event.clientX - down[0], event.clientY - down[1]) > 5) return;
+    const rect = renderer.domElement.getBoundingClientRect();
+    ray.setFromCamera(new THREE.Vector2(
+      (event.clientX - rect.left) / rect.width * 2 - 1,
+      1 - (event.clientY - rect.top) / rect.height * 2,
+    ), camera);
+    const hit = ray.intersectObjects(fittings, false)[0];
+    if (hit) selectAnchor(hit.object.userData.anchor);
+  });
+  const resize = () => {
+    const w = stage.clientWidth;
+    const h = stage.clientHeight;
+    if (w < 1 || h < 1) return;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+    render();
+  };
+  new ResizeObserver(resize).observe(stage);
+  byId("iso").addEventListener("click", () => preset(false));
+  byId("top").addEventListener("click", () => preset(true));
+  byId("concrete").addEventListener("click", (event) => {
+    const show = event.currentTarget.getAttribute("aria-pressed") !== "true";
+    event.currentTarget.setAttribute("aria-pressed", String(show));
+    for (const part of concreteParts) part.visible = show;
+    render();
+  });
+  draw(previewDimensions() ?? savedDimensions);
+  preset(false);
+  resize();
+  return draw;
+}
+
+try {
+  const [THREE, {OrbitControls}] = await Promise.all([
+    import("three"), import("three/addons/controls/OrbitControls.js"),
+  ]);
+  drawPlate = startModel(THREE, OrbitControls);
+  byId("status").hidden = true;
+} catch (error) {
+  byId("status").textContent = "The 3D view could not load. Check WebGL and the network.";
+  console.error(error);
+}
+</script>
+</body>
+</html>

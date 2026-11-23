@@ -173,7 +173,7 @@ Command notes:
 - `<NAME>` is the human-readable app name shown on the platform.
 - `--registered-name` sets the URL-friendly registered app name. If omitted, VIKTOR generates one.
 - `--app-type` is only used with `--init` and supports `editor`, `simple`, and `tree`.
-- After creating the app, set or confirm the same value in `viktor.config.toml`:
+- After creating the app, check the returned registered name. A collision may add a suffix. Set or confirm that name in `viktor.config.toml`:
 
 ```toml
 registered_name = "my-app-name"
@@ -200,14 +200,15 @@ registered_name = "my-app-name"
 python_version = "3.12"
 ```
 
-Then create the platform app with the same registered name and launch with a clean local install:
+If the platform app does not exist and creation is authorized, create it. Check the returned name, then install and start:
 
 ```bash
 viktor-cli create-app "My App Name" --registered-name my-app-name
-viktor-cli clean-start
+viktor-cli install
+viktor-cli start
 ```
 
-After `clean-start` succeeds, report the app URL printed by the CLI so the user can open it in the browser.
+After `start` succeeds, report the app URL printed by the CLI. Keep the session alive to retain the connection and inspect its output.
 
 If dependencies changed later, use:
 
@@ -247,12 +248,12 @@ Command notes:
 
 - `create-app`: creates a platform app; add `--init` to generate the initial local app files.
 - `install`: installs VIKTOR platform dependencies and app dependencies. Run it after changing `requirements.txt`.
-- `clean-start`: installs and starts the app in a clean development workspace. Use it for the first local launch after creating or cloning an app.
-- `start`: connects local code to the platform for browser-based development. Stop it with `CTRL+C`.
+- `clean-start`: combines install, clear, and start. Clear deletes entities and entity types in the development workspace. Use only for a confirmed empty workspace or after the user authorizes clearing existing or unknown data. Do not use it as an automatic fallback.
+- `start`: connects local code to the platform for browser-based development. Keep the process and its readable output alive; stop it with `CTRL+C`.
 - `run`: runs a command in the app container. Use `--` before the command when the command has flags.
 - `test`: runs unit tests with `python -m unittest discover -s tests`, or a dotted path passed with `--path`.
 - `clear`: clears entities and entity types from the development workspace database.
-- `publish`: publishes code to a production app. Use only after preparing and checking the code.
+- `publish`: publishes a version to the configured platform app. Confirm the app, version target, and publication authorization after preparation and checks.
 
 Useful flags:
 
@@ -266,9 +267,17 @@ viktor-cli install --use-pip
 
 Docker-only flags include `--max-memory`, `--dns`, `--python`, and `--volume`.
 
+## Development logs
+
+Run `viktor-cli start` in a persistent terminal session the agent can read. Wait for the connection message and development URL. Open the URL and reproduce the action, or ask the user to do it. Poll the same session for output and tracebacks, correlate them with the action, and check that the process is still alive. A running process does not prove that a view or action works. Keep it running while the user tests; stop it when no longer needed. If the agent cannot access a running terminal or keep the process alive, ask the user to run it and provide the relevant output.
+
+Use the agent's terminal or process-session tool to start the command in the app directory. Retain its session identifier and use the same tool to read later output; do not assume a command that returns a session identifier has completed. Check whether the terminal survives the end of the current turn before promising it will stay connected. If the tool cannot keep the process alive, tell the user and use a terminal they control. Do not start duplicate sessions when an accessible app session is already running.
+
+App output and personal worker logs are separate. Inspect the worker in VIKTOR Desktop for integration failures. Avoid including tokens or private model data in shared logs.
+
 ## Publishing Notes
 
-Before publishing, confirm `registered_name` in `viktor.config.toml` matches the app on the platform. The publish command uses the config value when `--registered-name` is not provided, and the flag overrides the config when it is provided.
+Ask the user before publishing unless the request already authorizes publication. Confirm `registered_name` in `viktor.config.toml` matches the app on the platform. The publish command uses the config value when `--registered-name` is not provided, and the flag overrides the config when it is provided.
 
 The publish command performs checks and continues in the background once the spinner appears. After a successful CLI message, the browser may need a refresh before the latest app version appears.
 
