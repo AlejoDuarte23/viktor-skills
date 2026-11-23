@@ -7,19 +7,19 @@ This file keeps the detailed install options out of the main README.
 Install into Claude Code and Codex:
 
 ```bash
-npx skills add AlejoDuarte23/viktor-skills --skill '*' -a claude-code -a codex -g
+npx skills add viktor-platform/viktor-public-skills --skill '*' -a claude-code -a codex -g
 ```
 
 Run non-interactively:
 
 ```bash
-npx skills add AlejoDuarte23/viktor-skills --skill '*' -a claude-code -a codex -g -y
+npx skills add viktor-platform/viktor-public-skills --skill '*' -a claude-code -a codex -g -y
 ```
 
 Preview the available skills:
 
 ```bash
-npx skills add AlejoDuarte23/viktor-skills --list
+npx skills add viktor-platform/viktor-public-skills --list
 ```
 
 Update later:
@@ -47,8 +47,8 @@ Codex reads skills from agent-standard skill folders. The exact user folder can 
 Add the marketplace and install the plugin:
 
 ```text
-/plugin marketplace add AlejoDuarte23/viktor-skills
-/plugin install viktor-skills@viktor-skills
+/plugin marketplace add viktor-platform/viktor-public-skills
+/plugin install viktor-skills@viktor-public-skills
 /reload-plugins
 ```
 
@@ -63,13 +63,13 @@ Invoke the router:
 If you do not want to use `npx`, clone the repository and copy the skills into the local Claude Code and Codex skill folders:
 
 ```powershell
-$repo = Join-Path $env:TEMP 'viktor-skills'; Remove-Item $repo -Recurse -Force -ErrorAction SilentlyContinue; git clone --depth 1 https://github.com/AlejoDuarte23/viktor-skills.git $repo; New-Item -ItemType Directory -Force -Path "$HOME\.claude\skills", "$HOME\.codex\skills", "$HOME\.agents\skills" | Out-Null; Copy-Item "$repo\skills\*" "$HOME\.claude\skills\" -Recurse -Force; Copy-Item "$repo\skills\*" "$HOME\.codex\skills\" -Recurse -Force; Copy-Item "$repo\skills\*" "$HOME\.agents\skills\" -Recurse -Force
+$repo = Join-Path $env:TEMP 'viktor-public-skills'; Remove-Item $repo -Recurse -Force -ErrorAction SilentlyContinue; git clone --depth 1 https://github.com/viktor-platform/viktor-public-skills.git $repo; New-Item -ItemType Directory -Force -Path "$HOME\.claude\skills", "$HOME\.codex\skills", "$HOME\.agents\skills" | Out-Null; Copy-Item "$repo\skills\*" "$HOME\.claude\skills\" -Recurse -Force; Copy-Item "$repo\skills\*" "$HOME\.codex\skills\" -Recurse -Force; Copy-Item "$repo\skills\*" "$HOME\.agents\skills\" -Recurse -Force
 ```
 
 If Git is not installed yet, install it with WinGet first and run the copy in the same PowerShell session:
 
 ```powershell
-winget install -e --id Git.Git --accept-package-agreements --accept-source-agreements; $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User'); $repo = Join-Path $env:TEMP 'viktor-skills'; Remove-Item $repo -Recurse -Force -ErrorAction SilentlyContinue; git clone --depth 1 https://github.com/AlejoDuarte23/viktor-skills.git $repo; New-Item -ItemType Directory -Force -Path "$HOME\.claude\skills", "$HOME\.codex\skills", "$HOME\.agents\skills" | Out-Null; Copy-Item "$repo\skills\*" "$HOME\.claude\skills\" -Recurse -Force; Copy-Item "$repo\skills\*" "$HOME\.codex\skills\" -Recurse -Force; Copy-Item "$repo\skills\*" "$HOME\.agents\skills\" -Recurse -Force
+winget install -e --id Git.Git --accept-package-agreements --accept-source-agreements; $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User'); $repo = Join-Path $env:TEMP 'viktor-public-skills'; Remove-Item $repo -Recurse -Force -ErrorAction SilentlyContinue; git clone --depth 1 https://github.com/viktor-platform/viktor-public-skills.git $repo; New-Item -ItemType Directory -Force -Path "$HOME\.claude\skills", "$HOME\.codex\skills", "$HOME\.agents\skills" | Out-Null; Copy-Item "$repo\skills\*" "$HOME\.claude\skills\" -Recurse -Force; Copy-Item "$repo\skills\*" "$HOME\.codex\skills\" -Recurse -Force; Copy-Item "$repo\skills\*" "$HOME\.agents\skills\" -Recurse -Force
 ```
 
 Optional: install Claude Code itself with WinGet:

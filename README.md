@@ -13,7 +13,7 @@ Each skill lives in `skills/<skill-name>/` and contains:
 Install the skills into Claude Code and Codex with the open `skills` CLI:
 
 ```bash
-npx skills add AlejoDuarte23/viktor-skills --skill '*' -a claude-code -a codex -g
+npx skills add viktor-platform/viktor-public-skills --skill '*' -a claude-code -a codex -g
 ```
 
 Use `-g` for a global user install. Omit `-g` to install into the current project. Install all skills, not only `viktor`; the router skill links to the specialized VIKTOR skills.
@@ -41,8 +41,8 @@ In Claude Code, invoke the router with:
 Claude Code can also install this repository as a plugin marketplace:
 
 ```text
-/plugin marketplace add AlejoDuarte23/viktor-skills
-/plugin install viktor-skills@viktor-skills
+/plugin marketplace add viktor-platform/viktor-public-skills
+/plugin install viktor-skills@viktor-public-skills
 /reload-plugins
 ```
 
